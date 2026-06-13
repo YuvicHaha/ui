@@ -913,7 +913,7 @@ function PageYep:createTargetInfoBox()
     local InfoContainer = Instance.new("Frame")
     InfoContainer.Name = "TargetInfoContainer"
     InfoContainer.Parent = Frame
-    InfoContainer.Size = UDim2.new(0, 160, 0, 300) -- Increased height slightly
+    InfoContainer.Size = UDim2.new(0, 160, 0, 223) -- Increased height slightly
     InfoContainer.Position = UDim2.new(-0.4, 0, 0.168, 0)
     InfoContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     InfoContainer.Visible = false
