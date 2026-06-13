@@ -887,27 +887,22 @@ function Library:CreateWindow(windowname,windowinfo)
         game:GetService("Debris"):AddItem(Label, 6) -- Stays for 6 seconds
     end
 
-    -- Updated: Added 'parentPage' as the first argument
     function PageYep:addLabel(parentPage, name, text)
-        local Label = Instance.new("TextLabel")
-        Label.Name = name
-        
-        -- FIX: If parentPage is a table, look for the 'Container' or 'Frame' inside it
-        -- Most UI libraries store the actual frame in a key like .Page or .ScrollingFrame
-        if typeof(parentPage) == "table" then
-            Label.Parent = parentPage.Page or parentPage.ScrollingFrame or parentPage.Container
-        else
-            Label.Parent = parentPage -- Fallback if you passed the instance directly
-        end
-        
-        Label.Size = UDim2.new(0, 280, 0, 20)
-        Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Label.Text = text
-        Label.Font = Enum.Font.GothamSemibold
-        Label.TextSize = 12
-        return Label 
-    end
+    local Label = Instance.new("TextLabel")
+    Label.Name = name
+    
+    -- TRY THIS: Most UI libs store the actual GUI object in .Page or .Frame
+    -- If your scrolling frame is named 'Page', use:
+    Label.Parent = parentPage.Page or parentPage.Frame 
+    
+    Label.Size = UDim2.new(0, 280, 0, 20)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Text = text
+    Label.Font = Enum.Font.GothamSemibold
+    Label.TextSize = 12
+    return Label 
+end
 
     return PageYep
 end
