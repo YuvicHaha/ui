@@ -27,6 +27,22 @@ function Library:CreateWindow(windowname,windowinfo)
     local Cre = Instance.new("ImageLabel")
     local YepTitle = Instance.new("TextLabel")
     local YepCorner = Instance.new("UICorner")
+    local LogContainer = Instance.new("Frame")
+    local LogContainerCorner = Instance.new("UICorner")
+    local LogList = Instance.new("UIListLayout")
+
+    LogContainer.Name = "LogContainer"
+    LogContainer.Parent = Frame
+    LogContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    LogContainer.Position = UDim2.new(1.03, 0, 0.168, 0)
+    LogContainer.Size = UDim2.new(0, 150, 0, 223)
+    
+    LogContainerCorner.CornerRadius = UDim.new(0, 6)
+    LogContainerCorner.Parent = LogContainer
+    
+    LogList.Parent = LogContainer
+    LogList.Padding = UDim.new(0, 5)
+    LogList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
     fu8rj82n.Name = "fu8rj82n"
     fu8rj82n.Parent = game.CoreGui
@@ -737,6 +753,20 @@ function Library:CreateWindow(windowname,windowinfo)
                     end
                 end
             end
+            -- Add this near the bottom of your Library script
+    function Library:Notify(text)
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(0, 140, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Text = "> " .. text
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 10
+        Label.Parent = LogContainer -- This references the container created above
+        
+        -- Auto-remove logs after 5 seconds
+        game:GetService("Debris"):AddItem(Label, 5)
+    end
             
             DropdownButton.MouseButton1Down:Connect(function()
                 if DropDownEnabled == false then 
