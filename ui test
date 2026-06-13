@@ -887,6 +887,20 @@ function Library:CreateWindow(windowname,windowinfo)
         game:GetService("Debris"):AddItem(Label, 6) -- Stays for 6 seconds
     end
 
+    -- Updated: Added 'parentPage' as the first argument
+    function PageYep:addLabel(parentPage, name, text)
+        local Label = Instance.new("TextLabel")
+        Label.Name = name
+        Label.Parent = parentPage -- Now it knows exactly where to put it
+        Label.Size = UDim2.new(0, 280, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Text = text
+        Label.Font = Enum.Font.GothamSemibold
+        Label.TextSize = 12
+        return Label 
+    end
+
     return PageYep
 end
 return Library
