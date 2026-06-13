@@ -862,22 +862,18 @@ function Library:CreateWindow(windowname,windowinfo)
     end
     function PageYep:Notify(text)
         local Label = Instance.new("TextLabel")
-        -- Size is fixed to fit the LogContainer width
-        Label.Size = UDim2.new(1, -10, 0, 20) 
+        Label.Size = UDim2.new(0, 150, 0, 20)
         Label.BackgroundTransparency = 1
         Label.TextColor3 = Color3.fromRGB(200, 200, 200)
-        Label.Font = Enum.Font.Code
+        Label.Font = Enum.Font.Code -- Monospace terminal font
         Label.TextSize = 11
         Label.RichText = true
-        Label.Text = " > " .. text
+        Label.Text = "  > " .. text
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        -- FIX: Truncate text if it's too long instead of breaking the UI
-        Label.TextTruncated = true 
-        Label.TextWrapped = false 
-        Label.TextTransparency = 1 
+        Label.TextTransparency = 1 -- Start hidden for fade-in
         Label.Parent = Frame:FindFirstChild("LogContainer")
 
-        -- Smooth Fade-in
+        -- Smooth Fade-in animation
         task.spawn(function()
             for i = 1, 0, -0.2 do
                 Label.TextTransparency = i
@@ -885,7 +881,7 @@ function Library:CreateWindow(windowname,windowinfo)
             end
         end)
 
-        game:GetService("Debris"):AddItem(Label, 6)
+        game:GetService("Debris"):AddItem(Label, 6) -- Stays for 6 seconds
     end
 
     return PageYep
