@@ -910,32 +910,51 @@ function Library:CreateWindow(windowname,windowinfo)
 end
 -- Add this inside your PageYep table
 function PageYep:createTargetInfoBox()
-    -- We use 'Frame' which is defined in your CreateWindow function
     local InfoContainer = Instance.new("Frame")
     InfoContainer.Name = "TargetInfoContainer"
-    InfoContainer.Parent = Frame -- This uses the 'Frame' from your CreateWindow scope
-    InfoContainer.Size = UDim2.new(0, 150, 0, 250)
-    InfoContainer.Position = UDim2.new(-0.4, 0, 0.168, 0) 
+    InfoContainer.Parent = Frame
+    InfoContainer.Size = UDim2.new(0, 160, 0, 300) -- Increased height slightly
+    InfoContainer.Position = UDim2.new(-0.4, 0, 0.168, 0)
     InfoContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    InfoContainer.Visible = false 
+    InfoContainer.Visible = false
+    InfoContainer.BorderSizePixel = 0
+    Instance.new("UICorner", InfoContainer).CornerRadius = UDim.new(0, 8)
     
+    -- Main Layout: This stacks items one by one
+    local Layout = Instance.new("UIListLayout", InfoContainer)
+    Layout.Padding = UDim.new(0, 8)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    -- Padding for the whole box
+    local UIPadding = Instance.new("UIPadding", InfoContainer)
+    UIPadding.PaddingTop = UDim.new(0, 10)
+    
+    -- Avatar
     local AvatarImage = Instance.new("ImageLabel")
     AvatarImage.Name = "Avatar"
     AvatarImage.Parent = InfoContainer
-    AvatarImage.Size = UDim2.new(0.8, 0, 0, 120)
-    AvatarImage.Position = UDim2.new(0.1, 0, 0.05, 0)
-    AvatarImage.BackgroundTransparency = 1
+    AvatarImage.Size = UDim2.new(0, 120, 0, 120)
+    AvatarImage.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AvatarImage.LayoutOrder = 1
+    Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(0, 8)
+
+    -- Info Container for Text
+    local TextHolder = Instance.new("Frame", InfoContainer)
+    TextHolder.Size = UDim2.new(1, -20, 0, 140)
+    TextHolder.BackgroundTransparency = 1
+    TextHolder.LayoutOrder = 2
     
-    local InfoText = Instance.new("TextLabel")
+    local InfoText = Instance.new("TextLabel", TextHolder)
     InfoText.Name = "Info"
-    InfoText.Parent = InfoContainer
-    InfoText.Size = UDim2.new(0.9, 0, 0, 100)
-    InfoText.Position = UDim2.new(0.05, 0, 0.6, 0)
+    InfoText.Size = UDim2.new(1, 0, 1, 0)
     InfoText.BackgroundTransparency = 1
-    InfoText.TextColor3 = Color3.new(1, 1, 1)
-    InfoText.TextSize = 12
+    InfoText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoText.Font = Enum.Font.GothamMedium
+    InfoText.TextSize = 13
     InfoText.TextWrapped = true
     InfoText.TextXAlignment = Enum.TextXAlignment.Left
+    InfoText.TextYAlignment = Enum.TextYAlignment.Top
 
     return InfoContainer, AvatarImage, InfoText
 end
