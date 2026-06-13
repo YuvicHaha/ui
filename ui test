@@ -887,14 +887,19 @@ function Library:CreateWindow(windowname,windowinfo)
         game:GetService("Debris"):AddItem(Label, 6) -- Stays for 6 seconds
     end
 
-    function PageYep:addLabel(parentPage, name, text)
+    function PageYep:addLabel(name, text)
+    -- Instead of passing parentPage, just find the currently visible page
+    local ActivePage = nil
+    for _, v in pairs(PageFolder:GetChildren()) do
+        if v.Visible == true then
+            ActivePage = v
+            break
+        end
+    end
+    
     local Label = Instance.new("TextLabel")
     Label.Name = name
-    
-    -- TRY THIS: Most UI libs store the actual GUI object in .Page or .Frame
-    -- If your scrolling frame is named 'Page', use:
-    Label.Parent = parentPage.Page or parentPage.Frame 
-    
+    Label.Parent = ActivePage or PageFolder:GetChildren()[1] -- Fallback
     Label.Size = UDim2.new(0, 280, 0, 20)
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -903,7 +908,37 @@ function Library:CreateWindow(windowname,windowinfo)
     Label.TextSize = 12
     return Label 
 end
+-- Add this inside your PageYep table
+function PageYep:createTargetInfoBox()
+    -- We use 'Frame' which is defined in your CreateWindow function
+    local InfoContainer = Instance.new("Frame")
+    InfoContainer.Name = "TargetInfoContainer"
+    InfoContainer.Parent = Frame -- This uses the 'Frame' from your CreateWindow scope
+    InfoContainer.Size = UDim2.new(0, 150, 0, 250)
+    InfoContainer.Position = UDim2.new(-0.4, 0, 0.168, 0) 
+    InfoContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    InfoContainer.Visible = false 
+    
+    local AvatarImage = Instance.new("ImageLabel")
+    AvatarImage.Name = "Avatar"
+    AvatarImage.Parent = InfoContainer
+    AvatarImage.Size = UDim2.new(0.8, 0, 0, 120)
+    AvatarImage.Position = UDim2.new(0.1, 0, 0.05, 0)
+    AvatarImage.BackgroundTransparency = 1
+    
+    local InfoText = Instance.new("TextLabel")
+    InfoText.Name = "Info"
+    InfoText.Parent = InfoContainer
+    InfoText.Size = UDim2.new(0.9, 0, 0, 100)
+    InfoText.Position = UDim2.new(0.05, 0, 0.6, 0)
+    InfoText.BackgroundTransparency = 1
+    InfoText.TextColor3 = Color3.new(1, 1, 1)
+    InfoText.TextSize = 12
+    InfoText.TextWrapped = true
+    InfoText.TextXAlignment = Enum.TextXAlignment.Left
 
+    return InfoContainer, AvatarImage, InfoText
+end
     return PageYep
 end
 return Library
