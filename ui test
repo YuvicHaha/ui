@@ -914,7 +914,7 @@ function PageYep:createTargetInfoBox()
     InfoContainer.Name = "TargetInfoContainer"
     InfoContainer.Parent = Frame
     InfoContainer.Size = UDim2.new(0, 160, 0, 223)
-    InfoContainer.Position = UDim2.new(-0.28, 0, 0.168, 0)
+    InfoContainer.Position = UDim2.new(-0.36, 0, 0.168, 0)
     InfoContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
     InfoContainer.Visible = false
     InfoContainer.BorderSizePixel = 0
