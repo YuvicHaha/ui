@@ -34,11 +34,14 @@ function Library:CreateWindow(windowname,windowinfo)
     LogContainer.Name = "LogContainer"
     LogContainer.Parent = Frame
     LogContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    LogContainer.BackgroundTransparency = 0.3 -- Sleek semi-transparency
-    LogContainer.Position = UDim2.new(1.03, 0, 0.168, 0)
-    LogContainer.Size = UDim2.new(0, 160, 0, 223)
+    LogContainer.BackgroundTransparency = 0.3
+    -- Position slightly adjusted to ensure it doesn't overlap the main frame when wider
+    LogContainer.Position = UDim2.new(1.04, 0, 0.168, 0) 
+    -- Increased the X size from 160 to 220 for a wider look
+    LogContainer.Size = UDim2.new(0, 220, 0, 223) 
     LogContainer.BorderSizePixel = 0
-    LogContainer.ClipsDescendants = true
+    LogContainer.ClipsDescendants = true 
+
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(40, 40, 40)
     Stroke.Thickness = 1
