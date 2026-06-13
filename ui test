@@ -913,35 +913,41 @@ function PageYep:createTargetInfoBox()
     local InfoContainer = Instance.new("Frame")
     InfoContainer.Name = "TargetInfoContainer"
     InfoContainer.Parent = Frame
-    InfoContainer.Size = UDim2.new(0, 160, 0, 223) -- Increased height slightly
-    InfoContainer.Position = UDim2.new(-0.4, 0, 0.168, 0)
-    InfoContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    InfoContainer.Size = UDim2.new(0, 160, 0, 223)
+    InfoContainer.Position = UDim2.new(-0.45, 0, 0.168, 0)
+    InfoContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
     InfoContainer.Visible = false
     InfoContainer.BorderSizePixel = 0
-    Instance.new("UICorner", InfoContainer).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", InfoContainer).CornerRadius = UDim.new(0, 10)
     
-    -- Main Layout: This stacks items one by one
+    -- Aesthetic Border
+    local Stroke = Instance.new("UIStroke", InfoContainer)
+    Stroke.Color = Color3.fromRGB(45, 45, 45)
+    Stroke.Thickness = 2
+    
+    -- Main Layout for vertical stacking
     local Layout = Instance.new("UIListLayout", InfoContainer)
-    Layout.Padding = UDim.new(0, 8)
+    Layout.Padding = UDim.new(0, 10)
     Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     Layout.SortOrder = Enum.SortOrder.LayoutOrder
     
-    -- Padding for the whole box
+    -- Top Padding
     local UIPadding = Instance.new("UIPadding", InfoContainer)
-    UIPadding.PaddingTop = UDim.new(0, 10)
+    UIPadding.PaddingTop = UDim.new(0, 12)
     
     -- Avatar
     local AvatarImage = Instance.new("ImageLabel")
     AvatarImage.Name = "Avatar"
     AvatarImage.Parent = InfoContainer
-    AvatarImage.Size = UDim2.new(0, 120, 0, 120)
-    AvatarImage.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AvatarImage.Size = UDim2.new(0, 110, 0, 110)
+    AvatarImage.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     AvatarImage.LayoutOrder = 1
+    AvatarImage.BorderSizePixel = 0
     Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(0, 8)
 
-    -- Info Container for Text
+    -- Text Holder (The Info)
     local TextHolder = Instance.new("Frame", InfoContainer)
-    TextHolder.Size = UDim2.new(1, -20, 0, 140)
+    TextHolder.Size = UDim2.new(1, -30, 0, 110)
     TextHolder.BackgroundTransparency = 1
     TextHolder.LayoutOrder = 2
     
@@ -949,9 +955,9 @@ function PageYep:createTargetInfoBox()
     InfoText.Name = "Info"
     InfoText.Size = UDim2.new(1, 0, 1, 0)
     InfoText.BackgroundTransparency = 1
-    InfoText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    InfoText.Font = Enum.Font.GothamMedium
-    InfoText.TextSize = 13
+    InfoText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    InfoText.Font = Enum.Font.RobotoMono -- Monospace looks much more "Pro"
+    InfoText.TextSize = 12
     InfoText.TextWrapped = true
     InfoText.TextXAlignment = Enum.TextXAlignment.Left
     InfoText.TextYAlignment = Enum.TextYAlignment.Top
