@@ -33,9 +33,16 @@ function Library:CreateWindow(windowname,windowinfo)
 
     LogContainer.Name = "LogContainer"
     LogContainer.Parent = Frame
-    LogContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    LogContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    LogContainer.BackgroundTransparency = 0.3 -- Sleek semi-transparency
     LogContainer.Position = UDim2.new(1.03, 0, 0.168, 0)
-    LogContainer.Size = UDim2.new(0, 150, 0, 223)
+    LogContainer.Size = UDim2.new(0, 160, 0, 223)
+    LogContainer.BorderSizePixel = 0
+    LogContainer.ClipsDescendants = true
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(40, 40, 40)
+    Stroke.Thickness = 1
+    Stroke.Parent = LogContainer
     
     LogContainerCorner.CornerRadius = UDim.new(0, 6)
     LogContainerCorner.Parent = LogContainer
@@ -854,18 +861,26 @@ function Library:CreateWindow(windowname,windowinfo)
         return PageElements
     end
     function PageYep:Notify(text)
-        -- 'Frame' is now accessible here because it's in the same scope
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(0, 140, 0, 20)
         Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.TextColor3 = Color3.fromRGB(200, 200, 200) -- Softer white
+        Label.Font = Enum.Font.Code -- Monospace looks more "pro"
+        Label.TextSize = 12
         Label.Text = "> " .. text
-        Label.Font = Enum.Font.Gotham
-        Label.TextSize = 10
-        
-        -- Use the 'Frame' variable from the top of CreateWindow
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTransparency = 1 -- Start invisible
         Label.Parent = Frame:FindFirstChild("LogContainer")
-        
+
+        -- Simple Fade-in effect
+        task.spawn(function()
+            for i = 1, 0, -0.1 do
+                Label.TextTransparency = i
+                task.wait(0.02)
+            end
+        end)
+
+        -- Cleanup
         game:GetService("Debris"):AddItem(Label, 5)
     end
 
