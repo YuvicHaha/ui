@@ -10,7 +10,30 @@ DestroyYep()
 wait(0.069)
 
 local Library = {}
-
+function Library:addDetailsBox(parentFrame)
+    local DetailsHolder = Instance.new("Frame")
+    local DetailsCorner = Instance.new("UICorner")
+    
+    DetailsHolder.Name = "DetailsHolder"
+    DetailsHolder.Parent = parentFrame
+    DetailsHolder.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    DetailsHolder.BackgroundTransparency = 0.5 
+    DetailsHolder.Size = UDim2.new(1, 0, 0, 50)
+    DetailsHolder.Position = UDim2.new(0, 0, 1, 5) 
+    
+    DetailsCorner.CornerRadius = UDim.new(0, 6)
+    DetailsCorner.Parent = DetailsHolder
+    
+    local InfoLabel = Instance.new("TextLabel", DetailsHolder)
+    InfoLabel.Size = UDim2.new(1, -10, 1, 0)
+    InfoLabel.BackgroundTransparency = 1
+    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoLabel.Text = "No target selected."
+    InfoLabel.Font = Enum.Font.GothamSemibold
+    InfoLabel.TextSize = 12
+    
+    return InfoLabel
+end
 function Library:CreateWindow(windowname,windowinfo)
     local fu8rj82n = Instance.new("ScreenGui")
     local Frame = Instance.new("Frame")
