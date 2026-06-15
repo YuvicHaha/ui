@@ -786,7 +786,144 @@ function Library:CreateWindow(windowname,windowinfo)
                     end
                 end
             end
-            -- Add this near the bottom of your Library script
+            function PageElements:addPlayerLookup(titleText)
+    local LookupFrame = Instance.new("Frame")
+    local LookupCorner = Instance.new("UICorner")
+    local SearchBox = Instance.new("TextBox")
+    local BoxCorner = Instance.new("UICorner")
+    local SearchButton = Instance.new("TextButton")
+    local ButtonCorner = Instance.new("UICorner")
+    
+    local DataDisplay = Instance.new("TextLabel")
+    local SearchAvatar = Instance.new("ImageLabel")
+    local AvatarCorner = Instance.new("UICorner")
+
+    -- Main Container Styling
+    LookupFrame.Name = "PlayerLookupModule"
+    LookupFrame.Size = UDim2.new(1, -10, 0, 160)
+    LookupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+    LookupFrame.BorderSizePixel = 0
+    LookupFrame.Parent = PageFrame -- Maps directly to your library's layout holder
+
+    LookupCorner.CornerRadius = UDim.new(0, 6)
+    LookupCorner.Parent = LookupFrame
+
+    -- Input Text Box Styling
+    SearchBox.Name = "SearchBox"
+    SearchBox.Size = UDim2.new(0.7, -10, 0, 32)
+    SearchBox.Position = UDim2.new(0, 8, 0, 8)
+    SearchBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SearchBox.TextColor3 = Color3.fromRGB(240, 240, 240)
+    SearchBox.PlaceholderText = "Enter Username..."
+    SearchBox.Text = ""
+    SearchBox.Font = Enum.Font.RobotoMono
+    SearchBox.TextSize = 12
+    SearchBox.Parent = LookupFrame
+
+    BoxCorner.CornerRadius = UDim.new(0, 4)
+    BoxCorner.Parent = SearchBox
+
+    -- Trigger Action Button Styling
+    SearchButton.Name = "SearchButton"
+    SearchButton.Size = UDim2.new(0.3, -10, 0, 32)
+    SearchButton.Position = UDim2.new(0.7, 4, 0, 8)
+    SearchButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    SearchButton.Text = "LOOKUP"
+    SearchButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchButton.Font = Enum.Font.RobotoMono
+    SearchButton.TextSize = 11
+    SearchButton.Parent = LookupFrame
+
+    ButtonCorner.CornerRadius = UDim.new(0, 4)
+    ButtonCorner.Parent = SearchButton
+
+    -- Live Avatar Component Viewport
+    SearchAvatar.Name = "SearchAvatar"
+    SearchAvatar.Size = UDim2.new(0, 100, 0, 100)
+    SearchAvatar.Position = UDim2.new(0, 8, 0, 48)
+    SearchAvatar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+    SearchAvatar.Image = "rbxassetid://6074246132" -- Default Standby Placeholder
+    SearchAvatar.Parent = LookupFrame
+
+    AvatarCorner.CornerRadius = UDim.new(0, 6)
+    AvatarCorner.Parent = SearchAvatar
+
+    -- Telemetry Details Layout Display Label
+    DataDisplay.Name = "DataDisplay"
+    DataDisplay.Size = UDim2.new(1, -124, 0, 100)
+    DataDisplay.Position = UDim2.new(0, 116, 0, 48)
+    DataDisplay.BackgroundTransparency = 1
+    DataDisplay.Text = "Waiting for entry request sequence..."
+    DataDisplay.TextColor3 = Color3.fromRGB(180, 180, 185)
+    DataDisplay.Font = Enum.Font.RobotoMono
+    DataDisplay.TextSize = 11
+    DataDisplay.TextXAlignment = Enum.TextXAlignment.Left
+    DataDisplay.TextYAlignment = Enum.TextYAlignment.Top
+    DataDisplay.RichText = true
+    DataDisplay.Parent = LookupFrame
+
+    -- Inner Functional Hook Logic Pipeline
+    local function ExecutionSequence()
+        local query = SearchBox.Text:lower()
+        if query == "" then return end
+
+        local targetPlayer = nil
+        for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+            if p.Name:lower():find(query, 1, true) or p.DisplayName:lower():find(query, 1, true) then
+                targetPlayer = p
+                break
+            end
+        end
+
+        if not targetPlayer then
+            DataDisplay.Text = "<br/><font color='rgb(240,80,80)'><b>ERROR:</b> Target profile offline or missing.</font>"
+            SearchAvatar.Image = "rbxassetid://6074246132"
+            return
+        end
+
+        -- Update Avatar Visual Assets directly inside the UI Element frame layout
+        SearchAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
+
+        -- Extract state indicators securely
+        local df = targetPlayer:FindFirstChild("DataFolder")
+        local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
+        local state = "ALIVE"
+        local item = "None"
+        
+        local char = targetPlayer.Character
+        if char then
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            local be = char:FindFirstChild("BodyEffects")
+            local currentTool = char:FindFirstChildOfClass("Tool")
+            
+            if currentTool then item = currentTool.Name end
+            
+            if humanoid and humanoid.Health <= 0 then state = "DEAD"
+            elseif be and be:FindFirstChild("K.O") and be["K.O"].Value then state = "KNOCKED OUT"
+            elseif char:FindFirstChild("Christmas_Sock") then state = "BAGGED"
+            elseif char:FindFirstChildOfClass("ForceField") then state = "FORCEFIELD"
+            elseif humanoid.MoveDirection.Magnitude > 0 then state = "MOVING" end
+        else
+            state = "UNLOADED"
+        end
+
+        -- Format and inject raw text strings into the custom template module layout
+        DataDisplay.Text = string.format(
+            "<b>@%s</b><br/>" ..
+            "💵 Cash: <font color='rgb(100,220,140)'>$%s</font><br/>" ..
+            "🛡️ State: %s<br/>" ..
+            "🎒 Tool: %s<br/>" ..
+            "📅 Age: %s Days",
+            targetPlayer.Name,
+            tostring(cash):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""),
+            state, item, tostring(targetPlayer.AccountAge)
+        )
+    end
+
+    -- Hook up activation connections
+    SearchButton.MouseButton1Click:Connect(ExecutionSequence)
+    SearchBox.FocusLost:Connect(function(enterPressed) if enterPressed then ExecutionSequence() end end)
+end
     function Library:Notify(text)
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(0, 140, 0, 20)
