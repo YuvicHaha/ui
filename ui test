@@ -1,3 +1,4 @@
+-- don't judge :rage:
 local function DestroyYep()
     for x = 1,69 do 
         if game.CoreGui:FindFirstChild("fu8rj82n") then game.CoreGui:FindFirstChild("fu8rj82n"):Destroy() end
@@ -35,7 +36,7 @@ function Library:CreateWindow(windowname,windowinfo)
     LogContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     LogContainer.BackgroundTransparency = 0.3
     LogContainer.Position = UDim2.new(1.04, 0, 0.168, 0) 
-    LogContainer.Size = UDim2.new(0, 160, 0, 223) -- Kept original log size untouched
+    LogContainer.Size = UDim2.new(0, 160, 0, 223) 
     LogContainer.BorderSizePixel = 0
     LogContainer.ClipsDescendants = true 
 
@@ -142,28 +143,30 @@ function Library:CreateWindow(windowname,windowinfo)
     Cre.ScaleType = Enum.ScaleType.Fit
     
     -- ====================================================================
-    -- HIJACKING YEPTITLE ("lop" parameter text element)
+    -- CENTERED STATUS TEXT
     -- ====================================================================
     YepTitle.Name = "YepTitle"
-    YepTitle.Parent = Yep
+    YepTitle.Parent = Frame -- Parented directly to Frame for absolute structural centering
     YepTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     YepTitle.BackgroundTransparency = 1.000
     YepTitle.BorderColor3 = Color3.fromRGB(20, 20, 20)
     YepTitle.BorderSizePixel = 0
     YepTitle.Font = Enum.Font.GothamSemibold
-    YepTitle.TextColor3 = Color3.fromRGB(137, 246, 255) -- Light cyan text color
+    YepTitle.TextColor3 = Color3.fromRGB(137, 246, 255)
     YepTitle.TextSize = 10.000
-    YepTitle.TextXAlignment = Enum.TextXAlignment.Right
     
-    -- Resized and re-positioned so it's visible automatically at the top header bar without overlapping anything
-    YepTitle.Size = UDim2.new(0, 210, 0, 33)
-    YepTitle.Position = UDim2.new(-5.0, 0, -0.318, 0)
-    YepTitle.TextTransparency = 0.000 -- Made completely visible by default!
+    -- Changed text alignment to Center
+    YepTitle.TextXAlignment = Enum.TextXAlignment.Center 
+    
+    -- Positioning calculated relative to the total main window size (432px wide)
+    YepTitle.Size = UDim2.new(0, 200, 0, 33)
+    YepTitle.Position = UDim2.new(0.5, -100, 0.028, 0) -- Locks the center point exactly inline with Title
+    YepTitle.TextTransparency = 0.000 
 
     YepCorner.Name = "YepCorner"
     YepCorner.Parent = YepTitle
 
-    -- System tracking loop driving the text value of YepTitle dynamically
+    -- System tracking engine
     task.spawn(function()
         local Stats = game:GetService("Stats")
         local Players = game:GetService("Players")
@@ -181,7 +184,6 @@ function Library:CreateWindow(windowname,windowinfo)
     end)
     -- ====================================================================
 
-    -- Removed MouseEnter/MouseLeave transparency changes so your status stats stay completely visible
     Cre.MouseEnter:Connect(function()
 		Cre.ImageColor3 = Color3.fromRGB(137, 246, 255)
 	end)
@@ -297,6 +299,11 @@ function Library:CreateWindow(windowname,windowinfo)
             end
 
         end)
+
+        if visible == true then 
+            Tab.TextTransparency = 0
+        end
+        -- code continues below...
 
         if visible == true then 
             Tab.TextTransparency = 0
