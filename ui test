@@ -145,21 +145,42 @@ function Library:CreateWindow(windowname,windowinfo)
     Cre.ScaleType = Enum.ScaleType.Fit
     
     YepTitle.Name = "YepTitle"
-    YepTitle.Parent = Yep
+    YepTitle.Parent = Frame -- Parented directly to Frame for absolute structural centering
     YepTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     YepTitle.BackgroundTransparency = 1.000
     YepTitle.BorderColor3 = Color3.fromRGB(20, 20, 20)
     YepTitle.BorderSizePixel = 0
-    YepTitle.Position = UDim2.new(1.57894742, 0, -0.318181813, 0)
-    YepTitle.Size = UDim2.new(0, 128, 0, 33)
     YepTitle.Font = Enum.Font.GothamSemibold
-    YepTitle.Text = windowinfo or "UI Made by Bytes#0001"
-    YepTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    YepTitle.TextSize = 9.000
-    YepTitle.TextTransparency = 1.000
-    print("derek cool")
+    YepTitle.TextColor3 = Color3.fromRGB(137, 246, 255)
+    YepTitle.TextSize = 10.000
+    
+    -- Changed text alignment to Center
+    YepTitle.TextXAlignment = Enum.TextXAlignment.Center 
+    
+    -- Positioning calculated relative to the total main window size (432px wide)
+    YepTitle.Size = UDim2.new(0, 200, 0, 33)
+    YepTitle.Position = UDim2.new(0.5, -100, 0.028, 0) -- Locks the center point exactly inline with Title
+    YepTitle.TextTransparency = 0.000 
+
     YepCorner.Name = "YepCorner"
     YepCorner.Parent = YepTitle
+
+    -- System tracking engine
+    task.spawn(function()
+        local Stats = game:GetService("Stats")
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        
+        while true do
+            local fps = math.floor(1 / RunService.RenderStepped:Wait())
+            local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+            local pCount = #Players:GetPlayers()
+            local maxP = Players.MaxPlayers
+            
+            YepTitle.Text = string.format("FPS: %d | PING: %dms | PLRS: %d/%d", fps, ping, pCount, maxP)
+            task.wait(0.4)
+        end
+    end)
 
     Cre.MouseEnter:Connect(function()
 		YepTitle.BackgroundTransparency = 0.8
