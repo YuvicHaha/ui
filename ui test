@@ -163,7 +163,6 @@ function Library:CreateWindow(windowname,windowinfo)
     YepTitle.TextTransparency = 0.000 
 
     YepCorner.Name = "YepCorner"
-    YepCorner.Parent = YepTitle
 
     -- System tracking engine
     task.spawn(function()
