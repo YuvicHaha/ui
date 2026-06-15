@@ -35,8 +35,10 @@ function Library:CreateWindow(windowname,windowinfo)
     LogContainer.Parent = Frame
     LogContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     LogContainer.BackgroundTransparency = 0.3
+    -- Position slightly adjusted to ensure it doesn't overlap the main frame when wider
     LogContainer.Position = UDim2.new(1.04, 0, 0.168, 0) 
-    LogContainer.Size = UDim2.new(0, 160, 0, 223) 
+    -- Increased the X size from 160 to 220 for a wider look
+    LogContainer.Size = UDim2.new(0, 220, 0, 223) 
     LogContainer.BorderSizePixel = 0
     LogContainer.ClipsDescendants = true 
 
@@ -142,54 +144,47 @@ function Library:CreateWindow(windowname,windowinfo)
     Cre.Image = "rbxassetid://4384401360"
     Cre.ScaleType = Enum.ScaleType.Fit
     
-    -- ====================================================================
-    -- CENTERED STATUS TEXT
-    -- ====================================================================
     YepTitle.Name = "YepTitle"
-    YepTitle.Parent = Frame -- Parented directly to Frame for absolute structural centering
+    YepTitle.Parent = Yep
     YepTitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     YepTitle.BackgroundTransparency = 1.000
     YepTitle.BorderColor3 = Color3.fromRGB(20, 20, 20)
     YepTitle.BorderSizePixel = 0
+    YepTitle.Position = UDim2.new(1.57894742, 0, -0.318181813, 0)
+    YepTitle.Size = UDim2.new(0, 128, 0, 33)
     YepTitle.Font = Enum.Font.GothamSemibold
-    YepTitle.TextColor3 = Color3.fromRGB(137, 246, 255)
-    YepTitle.TextSize = 10.000
-    
-    -- Changed text alignment to Center
-    YepTitle.TextXAlignment = Enum.TextXAlignment.Center 
-    
-    -- Positioning calculated relative to the total main window size (432px wide)
-    YepTitle.Size = UDim2.new(0, 200, 0, 33)
-    YepTitle.Position = UDim2.new(0.5, -100, 0.028, 0) -- Locks the center point exactly inline with Title
-    YepTitle.TextTransparency = 0.000 
-
+    YepTitle.Text = windowinfo or "UI Made by Bytes#0001"
+    YepTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    YepTitle.TextSize = 9.000
+    YepTitle.TextTransparency = 1.000
+    print("derek cool")
     YepCorner.Name = "YepCorner"
     YepCorner.Parent = YepTitle
 
-    -- System tracking engine
-    task.spawn(function()
-        local Stats = game:GetService("Stats")
-        local Players = game:GetService("Players")
-        local RunService = game:GetService("RunService")
-        
-        while true do
-            local fps = math.floor(1 / RunService.RenderStepped:Wait())
-            local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-            local pCount = #Players:GetPlayers()
-            local maxP = Players.MaxPlayers
-            
-            YepTitle.Text = string.format("FPS: %d | PING: %dms | PLRS: %d/%d", fps, ping, pCount, maxP)
-            task.wait(0.4)
-        end
-    end)
-    -- ====================================================================
-
     Cre.MouseEnter:Connect(function()
+		YepTitle.BackgroundTransparency = 0.8
+		YepTitle.TextTransparency = 0.5
+		wait(0.05)
+		YepTitle.BackgroundTransparency = 0.5
+		YepTitle.TextTransparency = 0.3
+		-- cre
 		Cre.ImageColor3 = Color3.fromRGB(137, 246, 255)
+		wait(0.05)
+		YepTitle.BackgroundTransparency = 0
+		YepTitle.TextTransparency = 0
 	end)
 	
 	Cre.MouseLeave:Connect(function()
+		YepTitle.BackgroundTransparency = 0.5
+		YepTitle.TextTransparency = 0.3
+		wait(0.05)
+		YepTitle.BackgroundTransparency = 0.8
+		YepTitle.TextTransparency = 0.5
+		-- cre
 		Cre.ImageColor3 = Color3.fromRGB(255,255,255)
+		wait(0.05)
+		YepTitle.BackgroundTransparency = 1
+		YepTitle.TextTransparency = 1
 	end)
     
 
@@ -299,11 +294,6 @@ function Library:CreateWindow(windowname,windowinfo)
             end
 
         end)
-
-        if visible == true then 
-            Tab.TextTransparency = 0
-        end
-        -- code continues below...
 
         if visible == true then 
             Tab.TextTransparency = 0
@@ -731,7 +721,7 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
             DropdownIcon.Image = "rbxassetid://3944690667"
             DropdownIcon.ScaleType = Enum.ScaleType.Fit
-
+            
             DropdownContainer.Name = "DropdownContainer"
             DropdownContainer.Parent = DropdownHolder
             DropdownContainer.Active = true
@@ -766,6 +756,8 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
 
+            -- Dropdown Toggle 
+             
             local function makeelements(bool)
                 for i,v in pairs(Home:GetChildren()) do 
                     if v:IsA("Frame") and v ~= DropdownHolder then 
@@ -773,6 +765,20 @@ function Library:CreateWindow(windowname,windowinfo)
                     end
                 end
             end
+            -- Add this near the bottom of your Library script
+    function Library:Notify(text)
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(0, 140, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Text = "> " .. text
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 10
+        Label.Parent = LogContainer -- This references the container created above
+        
+        -- Auto-remove logs after 5 seconds
+        game:GetService("Debris"):AddItem(Label, 5)
+    end
             
             DropdownButton.MouseButton1Down:Connect(function()
                 if DropDownEnabled == false then 
@@ -786,8 +792,8 @@ function Library:CreateWindow(windowname,windowinfo)
                     DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.2)
                     wait(0.09)
                     Home.CanvasPosition = Vector2.new(0,0)
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)-- check
                 else
                     DropDownEnabled = false
                     DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
@@ -799,8 +805,8 @@ function Library:CreateWindow(windowname,windowinfo)
                     makeelements(true)
                     DropdownContainer.Visible = false
                     wait(0.09)
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
                 end
             end)	
 
@@ -852,11 +858,13 @@ function Library:CreateWindow(windowname,windowinfo)
                     wait(0.3)
                     makeelements(true)
                     DropdownContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1)
-                end)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
+                end) -- droplist ended
             end
         end
+        return PageElements
+    end
     function PageYep:Notify(text)
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(0, 150, 0, 20)
