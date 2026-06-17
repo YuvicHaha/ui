@@ -691,426 +691,438 @@ function Library:CreateWindow(windowname,windowinfo)
             --
         end
 
-        function Library:Notify(text)
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0, 140, 0, 20)
-    Label.BackgroundTransparency = 1
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.Text = "> " .. text
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 10
-    Label.Parent = LogContainer -- References the container created in your main library initialization code
-    
-    -- Auto-remove logs after 5 seconds
-    game:GetService("Debris"):AddItem(Label, 5)
-end
+        function PageElements:addDropdown(dropdownname,list,scrollsize,callback)
+            local DropdownHolder = Instance.new("Frame")
+            local DropdownHolderCorner = Instance.new("UICorner")
+            local DropdownTitle = Instance.new("TextLabel")
+            local DropdownButton = Instance.new("TextButton")
+            local DropdownIcon = Instance.new("ImageLabel")
+            local DropdownContainer = Instance.new("Frame")
+            local DropdownContainerCorner = Instance.new("UICorner")
+            local DropdownOptionContainer = Instance.new("ScrollingFrame")
+            local DropdownOptionContainerLayout = Instance.new("UIListLayout")
 
-function Library:CreatePage(pagename)
-    local PageElements = {}
-    
-    -- Custom Dropdown UI Element Generator
-    function PageElements:addDropdown(dropdownname, list, scrollsize, callback)
-        local DropdownHolder = Instance.new("Frame")
-        local DropdownHolderCorner = Instance.new("UICorner")
-        local DropdownTitle = Instance.new("TextLabel")
-        local DropdownButton = Instance.new("TextButton")
-        local DropdownIcon = Instance.new("ImageLabel")
-        local DropdownContainer = Instance.new("Frame")
-        local DropdownContainerCorner = Instance.new("UICorner")
-        local DropdownOptionContainer = Instance.new("ScrollingFrame")
-        local DropdownOptionContainerLayout = Instance.new("UIListLayout")
+            local callback = callback or function() end
+            local DropDownEnabled = false
 
-        local callback = callback or function() end
-        local DropDownEnabled = false
+            DropdownHolder.Name = "DropdownHolder"
+            DropdownHolder.Parent = Home
+            DropdownHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownHolder.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownHolder.BorderSizePixel = 0
+            DropdownHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
+            DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
+            
+            DropdownHolderCorner.CornerRadius = UDim.new(0, 5)
+            DropdownHolderCorner.Name = "DropdownHolderCorner"
+            DropdownHolderCorner.Parent = DropdownHolder
+            
+            DropdownTitle.Name = "DropdownTitle"
+            DropdownTitle.Parent = DropdownHolder
+            DropdownTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownTitle.BackgroundTransparency = 1.000
+            DropdownTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownTitle.BorderSizePixel = 0
+            DropdownTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
+            DropdownTitle.Size = UDim2.new(0, 195, 0, 24)
+            DropdownTitle.Font = Enum.Font.GothamSemibold
+            DropdownTitle.Text = dropdownname
+            DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            DropdownTitle.TextSize = 11.000
+            DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+            
+            DropdownButton.Name = "DropdownButton"
+            DropdownButton.Parent = DropdownHolder
+            DropdownButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            DropdownButton.BackgroundTransparency = 1.000
+            DropdownButton.Size = UDim2.new(0, 288, 0, 26)
+            DropdownButton.Font = Enum.Font.SourceSans
+            DropdownButton.Text = ""
+            DropdownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+            DropdownButton.TextSize = 14.000
+            
+            DropdownIcon.Name = "DropdownIcon"
+            DropdownIcon.Parent = DropdownButton
+            DropdownIcon.BackgroundTransparency = 1.000
+            DropdownIcon.Position = UDim2.new(0.885416687, 0, 0.192307711, 0)
+            DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
+            DropdownIcon.Image = "rbxassetid://3944690667"
+            DropdownIcon.ScaleType = Enum.ScaleType.Fit
+            
+            DropdownContainer.Name = "DropdownContainer"
+            DropdownContainer.Parent = DropdownHolder
+            DropdownContainer.Active = true
+            DropdownContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownContainer.BorderSizePixel = 0
+            DropdownContainer.ClipsDescendants = true
+            DropdownContainer.Position = UDim2.new(0, 0, 1.15, 0)
+            DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
+            DropdownContainer.Visible = false
+            
+            DropdownContainerCorner.CornerRadius = UDim.new(0, 6)
+            DropdownContainerCorner.Name = "DropdownContainerCorner"
+            DropdownContainerCorner.Parent = DropdownContainer
+            
+            DropdownOptionContainer.Name = "DropdownOptionContainer"
+            DropdownOptionContainer.Parent = DropdownContainer
+            DropdownOptionContainer.Active = true
+            DropdownOptionContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownOptionContainer.BackgroundTransparency = 1.000
+            DropdownOptionContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownOptionContainer.BorderSizePixel = 0
+            DropdownOptionContainer.Position = UDim2.new(0, 0, 0.02, 0)
+            DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
+            DropdownOptionContainer.Visible = false
+            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, scrollsize or 4, 0)
+            DropdownOptionContainer.ScrollBarThickness = 4
+            DropdownOptionContainer.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 50)
+            
+            DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
+            DropdownOptionContainerLayout.Parent = DropdownOptionContainer
+            DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            DropdownOptionContainerLayout.Padding = UDim.new(0, 6)
 
-        DropdownHolder.Name = "DropdownHolder"
-        DropdownHolder.Parent = Home
-        DropdownHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-        DropdownHolder.BorderSizePixel = 0
-        DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
-        
-        DropdownHolderCorner.CornerRadius = UDim.new(0, 5)
-        DropdownHolderCorner.Parent = DropdownHolder
-        
-        DropdownTitle.Name = "DropdownTitle"
-        DropdownTitle.Parent = DropdownHolder
-        DropdownTitle.BackgroundTransparency = 1.000
-        DropdownTitle.Position = UDim2.new(0.024, 0, 0, 0)
-        DropdownTitle.Size = UDim2.new(0, 195, 0, 24)
-        DropdownTitle.Font = Enum.Font.GothamSemibold
-        DropdownTitle.Text = dropdownname
-        DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        DropdownTitle.TextSize = 11
-        DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
-        
-        DropdownButton.Name = "DropdownButton"
-        DropdownButton.Parent = DropdownHolder
-        DropdownButton.BackgroundTransparency = 1.000
-        DropdownButton.Size = UDim2.new(0, 288, 0, 26)
-        DropdownButton.Text = ""
-        
-        DropdownIcon.Name = "DropdownIcon"
-        DropdownIcon.Parent = DropdownButton
-        DropdownIcon.BackgroundTransparency = 1.000
-        DropdownIcon.Position = UDim2.new(0.885, 0, 0.192, 0)
-        DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
-        DropdownIcon.Image = "rbxassetid://3944690667"
-        DropdownIcon.ScaleType = Enum.ScaleType.Fit
-        
-        DropdownContainer.Name = "DropdownContainer"
-        DropdownContainer.Parent = DropdownHolder
-        DropdownContainer.Active = true
-        DropdownContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-        DropdownContainer.BorderSizePixel = 0
-        DropdownContainer.ClipsDescendants = true
-        DropdownContainer.Position = UDim2.new(0, 0, 1.15, 0)
-        DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
-        DropdownContainer.Visible = false
-        
-        DropdownContainerCorner.CornerRadius = UDim.new(0, 6)
-        DropdownContainerCorner.Parent = DropdownContainer
-        
-        DropdownOptionContainer.Name = "DropdownOptionContainer"
-        DropdownOptionContainer.Parent = DropdownContainer
-        DropdownOptionContainer.Active = true
-        DropdownOptionContainer.BackgroundTransparency = 1.000
-        DropdownOptionContainer.BorderSizePixel = 0
-        DropdownOptionContainer.Position = UDim2.new(0, 0, 0.02, 0)
-        DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
-        DropdownOptionContainer.Visible = false
-        DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, scrollsize or 4, 0)
-        DropdownOptionContainer.ScrollBarThickness = 4
-        DropdownOptionContainer.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 50)
-        
-        DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
-        DropdownOptionContainerLayout.Parent = DropdownOptionContainer
-        DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        DropdownOptionContainerLayout.Padding = UDim.new(0, 6)
-
-        local function makeelements(bool)
-            for i,v in pairs(Home:GetChildren()) do 
-                if v:IsA("Frame") and v ~= DropdownHolder then 
-                    v.Visible = bool
+            -- Dropdown Toggle 
+             
+            local function makeelements(bool)
+                for i,v in pairs(Home:GetChildren()) do 
+                    if v:IsA("Frame") and v ~= DropdownHolder then 
+                        v.Visible = bool
+                    end
                 end
+            end
+            function PageElements:addPlayerLookup(titleText)
+    local LookupFrame = Instance.new("Frame")
+    local LookupCorner = Instance.new("UICorner")
+    local SearchBox = Instance.new("TextBox")
+    local BoxCorner = Instance.new("UICorner")
+    local SearchButton = Instance.new("TextButton")
+    local ButtonCorner = Instance.new("UICorner")
+    
+    local DataDisplay = Instance.new("TextLabel")
+    local SearchAvatar = Instance.new("ImageLabel")
+    local AvatarCorner = Instance.new("UICorner")
+
+    -- Main Container Styling
+    LookupFrame.Name = "PlayerLookupModule"
+    LookupFrame.Size = UDim2.new(1, -10, 0, 160)
+    LookupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+    LookupFrame.BorderSizePixel = 0
+    LookupFrame.Parent = PageFrame -- Maps directly to your library's layout holder
+
+    LookupCorner.CornerRadius = UDim.new(0, 6)
+    LookupCorner.Parent = LookupFrame
+
+    -- Input Text Box Styling
+    SearchBox.Name = "SearchBox"
+    SearchBox.Size = UDim2.new(0.7, -10, 0, 32)
+    SearchBox.Position = UDim2.new(0, 8, 0, 8)
+    SearchBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SearchBox.TextColor3 = Color3.fromRGB(240, 240, 240)
+    SearchBox.PlaceholderText = "Enter Username..."
+    SearchBox.Text = ""
+    SearchBox.Font = Enum.Font.RobotoMono
+    SearchBox.TextSize = 12
+    SearchBox.Parent = LookupFrame
+
+    BoxCorner.CornerRadius = UDim.new(0, 4)
+    BoxCorner.Parent = SearchBox
+
+    -- Trigger Action Button Styling
+    SearchButton.Name = "SearchButton"
+    SearchButton.Size = UDim2.new(0.3, -10, 0, 32)
+    SearchButton.Position = UDim2.new(0.7, 4, 0, 8)
+    SearchButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    SearchButton.Text = "LOOKUP"
+    SearchButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchButton.Font = Enum.Font.RobotoMono
+    SearchButton.TextSize = 11
+    SearchButton.Parent = LookupFrame
+
+    ButtonCorner.CornerRadius = UDim.new(0, 4)
+    ButtonCorner.Parent = SearchButton
+
+    -- Live Avatar Component Viewport
+    SearchAvatar.Name = "SearchAvatar"
+    SearchAvatar.Size = UDim2.new(0, 100, 0, 100)
+    SearchAvatar.Position = UDim2.new(0, 8, 0, 48)
+    SearchAvatar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+    SearchAvatar.Image = "rbxassetid://6074246132" -- Default Standby Placeholder
+    SearchAvatar.Parent = LookupFrame
+
+    AvatarCorner.CornerRadius = UDim.new(0, 6)
+    AvatarCorner.Parent = SearchAvatar
+
+    -- Telemetry Details Layout Display Label
+    DataDisplay.Name = "DataDisplay"
+    DataDisplay.Size = UDim2.new(1, -124, 0, 100)
+    DataDisplay.Position = UDim2.new(0, 116, 0, 48)
+    DataDisplay.BackgroundTransparency = 1
+    DataDisplay.Text = "Waiting for entry request sequence..."
+    DataDisplay.TextColor3 = Color3.fromRGB(180, 180, 185)
+    DataDisplay.Font = Enum.Font.RobotoMono
+    DataDisplay.TextSize = 11
+    DataDisplay.TextXAlignment = Enum.TextXAlignment.Left
+    DataDisplay.TextYAlignment = Enum.TextYAlignment.Top
+    DataDisplay.RichText = true
+    DataDisplay.Parent = LookupFrame
+
+    -- Inner Functional Hook Logic Pipeline
+    local function ExecutionSequence()
+        local query = SearchBox.Text:lower()
+        if query == "" then return end
+
+        local targetPlayer = nil
+        for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+            if p.Name:lower():find(query, 1, true) or p.DisplayName:lower():find(query, 1, true) then
+                targetPlayer = p
+                break
             end
         end
+
+        if not targetPlayer then
+            DataDisplay.Text = "<br/><font color='rgb(240,80,80)'><b>ERROR:</b> Target profile offline or missing.</font>"
+            SearchAvatar.Image = "rbxassetid://6074246132"
+            return
+        end
+
+        -- Update Avatar Visual Assets directly inside the UI Element frame layout
+        SearchAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
+
+        -- Extract state indicators securely
+        local df = targetPlayer:FindFirstChild("DataFolder")
+        local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
+        local state = "ALIVE"
+        local item = "None"
         
-        -- Main Dropdown Button Click (Acts as the ONLY toggle to open and close)
-        DropdownButton.MouseButton1Down:Connect(function()
-            if DropDownEnabled == false then 
-                DropDownEnabled = true
-                makeelements(false)
-                DropdownContainer.Visible = true
-                DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 220), "Out", "Linear", 0.25)
-                DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
-                task.wait(0.25)
-                DropdownOptionContainer.Visible = true
-                DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 210), "Out", "Linear", 0.15)
-                Home.CanvasPosition = Vector2.new(0,0)
-            else
-                DropDownEnabled = false
-                DropdownIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-                DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.15)
-                task.wait(0.15)
-                DropdownOptionContainer.Visible = false
-                DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.2)
-                task.wait(0.2)
-                makeelements(true)
-                DropdownContainer.Visible = false
-            end
-        end)    
-
-        -- Generate Profile Dropdown Entries
-        for i, v in pairs(list) do  
-            -- Discover if target input string matches an active player instance
-            local targetPlayer = nil
-            local matchedName = tostring(v)
+        local char = targetPlayer.Character
+        if char then
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            local be = char:FindFirstChild("BodyEffects")
+            local currentTool = char:FindFirstChildOfClass("Tool")
             
-            for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-                if p.Name:lower() == matchedName:lower() or p.DisplayName:lower() == matchedName:lower() then
-                    targetPlayer = p
-                    break
+            if currentTool then item = currentTool.Name end
+            
+            if humanoid and humanoid.Health <= 0 then state = "DEAD"
+            elseif be and be:FindFirstChild("K.O") and be["K.O"].Value then state = "KNOCKED OUT"
+            elseif char:FindFirstChild("Christmas_Sock") then state = "BAGGED"
+            elseif char:FindFirstChildOfClass("ForceField") then state = "FORCEFIELD"
+            elseif humanoid.MoveDirection.Magnitude > 0 then state = "MOVING" end
+        else
+            state = "UNLOADED"
+        end
+
+        -- Format and inject raw text strings into the custom template module layout
+        DataDisplay.Text = string.format(
+            "<b>@%s</b><br/>" ..
+            "💵 Cash: <font color='rgb(100,220,140)'>$%s</font><br/>" ..
+            "🛡️ State: %s<br/>" ..
+            "🎒 Tool: %s<br/>" ..
+            "📅 Age: %s Days",
+            targetPlayer.Name,
+            tostring(cash):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""),
+            state, item, tostring(targetPlayer.AccountAge)
+        )
+    end
+
+    -- Hook up activation connections
+    SearchButton.MouseButton1Click:Connect(ExecutionSequence)
+    SearchBox.FocusLost:Connect(function(enterPressed) if enterPressed then ExecutionSequence() end end)
+end
+    function Library:Notify(text)
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(0, 140, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Text = "> " .. text
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 10
+        Label.Parent = LogContainer -- This references the container created above
+        
+        -- Auto-remove logs after 5 seconds
+        game:GetService("Debris"):AddItem(Label, 5)
+    end
+            
+            DropdownButton.MouseButton1Down:Connect(function()
+                if DropDownEnabled == false then 
+                    DropDownEnabled = true
+                    makeelements(false)
+                    DropdownContainer.Visible = true
+                    DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 220), "Out", "Linear", 0.25)
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
+                    task.wait(0.25)
+                    DropdownOptionContainer.Visible = true
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 210), "Out", "Linear", 0.15)
+                    Home.CanvasPosition = Vector2.new(0,0)
+                else
+                    DropDownEnabled = false
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.15)
+                    task.wait(0.15)
+                    DropdownOptionContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.2)
+                    task.wait(0.2)
+                    makeelements(true)
+                    DropdownContainer.Visible = false
                 end
-            end
+            end)	
 
-            -- Base Profile Option Box Holder
-            local Option = Instance.new("TextButton")
-            local OptionCorner = Instance.new("UICorner")
-            local OptionStroke = Instance.new("UIStroke") -- Selection glow action
+            for i,v in pairs(list) do  
+                local targetPlayer = nil
+                local matchedName = tostring(v)
+                
+                -- Check if item in list matches an online player name or display name
+                for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+                    if p.Name:lower() == matchedName:lower() or p.DisplayName:lower() == matchedName:lower() then
+                        targetPlayer = p
+                        break
+                    end
+                end
 
-            Option.Name = "Option_" .. matchedName
-            Option.Parent = DropdownOptionContainer
-            Option.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-            Option.Size = UDim2.new(0, 274, 0, 50) -- Enlarged to show analytics neatly
-            Option.AutoButtonColor = false
-            Option.Text = ""
-            
-            OptionCorner.CornerRadius = UDim.new(0, 6)
-            OptionCorner.Parent = Option
+                local Option = Instance.new("TextButton")
+                local OptionCorner = Instance.new("UICorner")
+                local OptionStroke = Instance.new("UIStroke")
 
-            OptionStroke.Thickness = 1.5
-            OptionStroke.Color = Color3.fromRGB(35, 35, 38)
-            OptionStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-            OptionStroke.Parent = Option
+                Option.Name = "Option_" .. matchedName
+                Option.Parent = DropdownOptionContainer
+                Option.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+                Option.Size = UDim2.new(0, 274, 0, 50) -- Taller layout size for avatar + player telemetry details
+                Option.AutoButtonColor = false
+                Option.Text = ""
+                
+                OptionCorner.CornerRadius = UDim.new(0, 6)
+                OptionCorner.Name = "OptionCorner"
+                OptionCorner.Parent = Option
 
-            if targetPlayer then
-                -- Profile Avatar Headshot Thumbnail Component
-                local AvatarImg = Instance.new("ImageLabel")
-                AvatarImg.Size = UDim2.new(0, 38, 0, 38)
-                AvatarImg.Position = UDim2.new(0, 6, 0.5, -19)
-                AvatarImg.BackgroundTransparency = 1
-                AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
-                AvatarImg.Parent = Option
+                OptionStroke.Thickness = 1.5
+                OptionStroke.Color = Color3.fromRGB(35, 35, 38)
+                OptionStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                OptionStroke.Parent = Option
 
-                local ImgCorner = Instance.new("UICorner")
-                ImgCorner.CornerRadius = UDim.new(1, 0)
-                ImgCorner.Parent = AvatarImg
+                -- If item matches an online player, build advanced profile layout cards
+                if targetPlayer then
+                    local AvatarImg = Instance.new("ImageLabel")
+                    AvatarImg.Size = UDim2.new(0, 38, 0, 38)
+                    AvatarImg.Position = UDim2.new(0, 6, 0.5, -19)
+                    AvatarImg.BackgroundTransparency = 1
+                    AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
+                    AvatarImg.Parent = Option
 
-                -- Advanced Telemetry Details Label Block
-                local InfoLabel = Instance.new("TextLabel")
-                InfoLabel.Size = UDim2.new(1, -54, 1, -6)
-                InfoLabel.Position = UDim2.new(0, 50, 0, 3)
-                InfoLabel.BackgroundTransparency = 1
-                InfoLabel.Font = Enum.Font.GothamBold
-                InfoLabel.TextSize = 10
-                InfoLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
-                InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-                InfoLabel.TextYAlignment = Enum.TextYAlignment.Center
-                InfoLabel.RichText = true
-                InfoLabel.Parent = Option
+                    local ImgCorner = Instance.new("UICorner")
+                    ImgCorner.CornerRadius = UDim.new(1, 0)
+                    ImgCorner.Parent = AvatarImg
 
-                -- Live Data Loop Update Task for real-time tracking accuracy
-                task.spawn(function()
-                    while Option and Option.Parent do
-                        if targetPlayer and targetPlayer:IsDescendantOf(game:GetService("Players")) then
-                            local df = targetPlayer:FindFirstChild("DataFolder")
-                            local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
-                            
-                            local state = "Alive"
-                            local stateColor = "rgb(40,200,140)"
-                            local hasFF = "No"
-                            
-                            local char = targetPlayer.Character
-                            if char then
-                                local be = char:FindFirstChild("BodyEffects")
-                                if be then
-                                    if be:FindFirstChild("K.O") and be["K.O"].Value then
-                                        state = "Knocked"
-                                        stateColor = "rgb(230,140,10)"
-                                    elseif be:FindFirstChild("Dead") and be.Dead.Value then
-                                        state = "Dead"
-                                        stateColor = "rgb(220,60,60)"
+                    local InfoLabel = Instance.new("TextLabel")
+                    InfoLabel.Size = UDim2.new(1, -54, 1, -6)
+                    InfoLabel.Position = UDim2.new(0, 50, 0, 3)
+                    InfoLabel.BackgroundTransparency = 1
+                    InfoLabel.Font = Enum.Font.GothamBold
+                    InfoLabel.TextSize = 10
+                    InfoLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
+                    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+                    InfoLabel.TextYAlignment = Enum.TextYAlignment.Center
+                    InfoLabel.RichText = true
+                    InfoLabel.Parent = Option
+
+                    -- Continuous execution frame monitoring sequence loop
+                    task.spawn(function()
+                        while Option and Option.Parent do
+                            if targetPlayer and targetPlayer:IsDescendantOf(game:GetService("Players")) then
+                                local df = targetPlayer:FindFirstChild("DataFolder")
+                                local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
+                                
+                                local state = "Alive"
+                                local stateColor = "rgb(40,200,140)"
+                                local hasFF = "No"
+                                
+                                local char = targetPlayer.Character
+                                if char then
+                                    local be = char:FindFirstChild("BodyEffects")
+                                    if be then
+                                        if be:FindFirstChild("K.O") and be["K.O"].Value then
+                                            state = "Knocked"
+                                            stateColor = "rgb(230,140,10)"
+                                        elseif be:FindFirstChild("Dead") and be.Dead.Value then
+                                            state = "Dead"
+                                            stateColor = "rgb(220,60,60)"
+                                        end
                                     end
+                                    if char:FindFirstChild("Christmas_Sock") or char:FindFirstChild("[BrownBag]") then
+                                        state = "Bagged"
+                                        stateColor = "rgb(170,100,240)"
+                                    end
+                                    if char:FindFirstChildOfClass("ForceField") then
+                                        hasFF = "Yes"
+                                    end
+                                else
+                                    state = "No Character"
+                                    stateColor = "rgb(120,120,120)"
                                 end
-                                if char:FindFirstChild("Christmas_Sock") or char:FindFirstChild("[BrownBag]") then
-                                    state = "Bagged"
-                                    stateColor = "rgb(170,100,240)"
-                                end
-                                if char:FindFirstChildOfClass("ForceField") then
-                                    hasFF = "Yes"
-                                end
-                            else
-                                state = "No Character"
-                                stateColor = "rgb(120,120,120)"
-                            end
 
-                            InfoLabel.Text = "<b>" .. targetPlayer.Name .. "</b> <font color='rgb(110,210,255)'>($" .. tostring(cash) .. ")</font>\n" ..
-                                             "Status: <font color='" .. stateColor .. "'>" .. state .. "</font> | FF: " .. hasFF
-                        else
-                            InfoLabel.Text = "<b>" .. matchedName .. "</b>\n<font color='rgb(220,60,60)'>Left Game</font>"
-                            break
+                                InfoLabel.Text = "<b>" .. targetPlayer.Name .. "</b> <font color='rgb(110,210,255)'>($" .. tostring(cash) .. ")</font>\n" ..
+                                                 "Status: <font color='" .. stateColor .. "'>" .. state .. "</font> | FF: " .. hasFF
+                            else
+                                InfoLabel.Text = "<b>" .. matchedName .. "</b>\n<font color='rgb(220,60,60)'>Left Game</font>"
+                                break
+                            end
+                            task.wait(1)
                         end
-                        task.wait(1)
+                    end)
+                else
+                    -- Fallback layout design template for non-player default strings
+                    local SimpleText = Instance.new("TextLabel")
+                    SimpleText.Size = UDim2.new(1, 0, 1, 0)
+                    SimpleText.BackgroundTransparency = 1
+                    SimpleText.Font = Enum.Font.GothamSemibold
+                    SimpleText.TextSize = 11
+                    SimpleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    SimpleText.Text = matchedName
+                    SimpleText.Parent = Option
+                end
+
+                Option.MouseEnter:Connect(function()
+                    if OptionStroke.Color ~= Color3.fromRGB(137, 246, 255) then
+                        Option.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
                     end
                 end)
-            else
-                -- Fallback Layout UI Design for Generic List Values
-                local SimpleText = Instance.new("TextLabel")
-                SimpleText.Size = UDim2.new(1, 0, 1, 0)
-                SimpleText.BackgroundTransparency = 1
-                SimpleText.Font = Enum.Font.GothamSemibold
-                SimpleText.TextSize = 11
-                SimpleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-                SimpleText.Text = matchedName
-                SimpleText.Parent = Option
-            end
-
-            -- UI Mouse Interactivity Events
-            Option.MouseEnter:Connect(function()
-                if OptionStroke.Color ~= Color3.fromRGB(137, 246, 255) then
-                    Option.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
-                end
-            end)
-            
-            Option.MouseLeave:Connect(function()
-                if OptionStroke.Color ~= Color3.fromRGB(137, 246, 255) then
-                    Option.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-                end
-            end)
-            
-            -- Click Action Execution Logic
-            Option.MouseButton1Down:Connect(function()
-                -- Clear old selection glows and colors from other entries
-                for _, child in pairs(DropdownOptionContainer:GetChildren()) do
-                    if child:IsA("TextButton") then
-                        child.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-                        local stroke = child:FindFirstChildOfClass("UIStroke")
-                        if stroke then stroke.Color = Color3.fromRGB(35, 35, 38) end
+                
+                Option.MouseLeave:Connect(function()
+                    if OptionStroke.Color ~= Color3.fromRGB(137, 246, 255) then
+                        Option.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
                     end
-                end
-
-                -- Apply Selection Glow Accent Style directly onto clicked card
-                Option.BackgroundColor3 = Color3.fromRGB(18, 28, 35)
-                OptionStroke.Color = Color3.fromRGB(137, 246, 255)
-
-                -- Fires custom targeted callback thread
-                callback(v)
-            end)
-        end
-    end
-
-    -- Player Search/Lookup UI Component Module
-    function PageElements:addPlayerLookup(titleText)
-        local LookupFrame = Instance.new("Frame")
-        local LookupCorner = Instance.new("UICorner")
-        local SearchBox = Instance.new("TextBox")
-        local BoxCorner = Instance.new("UICorner")
-        local SearchButton = Instance.new("TextButton")
-        local ButtonCorner = Instance.new("UICorner")
-        
-        local DataDisplay = Instance.new("TextLabel")
-        local SearchAvatar = Instance.new("ImageLabel")
-        local AvatarCorner = Instance.new("UICorner")
-
-        -- Main Container Styling
-        LookupFrame.Name = "PlayerLookupModule"
-        LookupFrame.Size = UDim2.new(1, -10, 0, 160)
-        LookupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
-        LookupFrame.BorderSizePixel = 0
-        LookupFrame.Parent = PageFrame -- Maps directly to your library's design layout holder
-
-        LookupCorner.CornerRadius = UDim.new(0, 6)
-        LookupCorner.Parent = LookupFrame
-
-        -- Input Text Box Styling
-        SearchBox.Name = "SearchBox"
-        SearchBox.Size = UDim2.new(0.7, -10, 0, 32)
-        SearchBox.Position = UDim2.new(0, 8, 0, 8)
-        SearchBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SearchBox.TextColor3 = Color3.fromRGB(240, 240, 240)
-        SearchBox.PlaceholderText = "Enter Username..."
-        SearchBox.Text = ""
-        SearchBox.Font = Enum.Font.RobotoMono
-        SearchBox.TextSize = 12
-        SearchBox.Parent = LookupFrame
-
-        BoxCorner.CornerRadius = UDim.new(0, 4)
-        BoxCorner.Parent = SearchBox
-
-        -- Trigger Action Button Styling
-        SearchButton.Name = "SearchButton"
-        SearchButton.Size = UDim2.new(0.3, -10, 0, 32)
-        SearchButton.Position = UDim2.new(0.7, 4, 0, 8)
-        SearchButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-        SearchButton.Text = "LOOKUP"
-        SearchButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        SearchButton.Font = Enum.Font.RobotoMono
-        SearchButton.TextSize = 11
-        SearchButton.Parent = LookupFrame
-
-        ButtonCorner.CornerRadius = UDim.new(0, 4)
-        ButtonCorner.Parent = SearchButton
-
-        -- Live Avatar Component Viewport
-        SearchAvatar.Name = "SearchAvatar"
-        SearchAvatar.Size = UDim2.new(0, 100, 0, 100)
-        SearchAvatar.Position = UDim2.new(0, 8, 0, 48)
-        SearchAvatar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-        SearchAvatar.Image = "rbxassetid://6074246132" -- Default Standby Placeholder
-        SearchAvatar.Parent = LookupFrame
-
-        AvatarCorner.CornerRadius = UDim.new(0, 6)
-        AvatarCorner.Parent = SearchAvatar
-
-        -- Telemetry Details Layout Display Label
-        DataDisplay.Name = "DataDisplay"
-        DataDisplay.Size = UDim2.new(1, -124, 0, 100)
-        DataDisplay.Position = UDim2.new(0, 116, 0, 48)
-        DataDisplay.BackgroundTransparency = 1
-        DataDisplay.Text = "Waiting for entry request sequence..."
-        DataDisplay.TextColor3 = Color3.fromRGB(180, 180, 185)
-        DataDisplay.Font = Enum.Font.RobotoMono
-        DataDisplay.TextSize = 11
-        DataDisplay.TextXAlignment = Enum.TextXAlignment.Left
-        DataDisplay.TextYAlignment = Enum.TextYAlignment.Top
-        DataDisplay.RichText = true
-        DataDisplay.Parent = LookupFrame
-
-        -- Inner Functional Hook Logic Pipeline
-        local function ExecutionSequence()
-            local query = SearchBox.Text:lower()
-            if query == "" then return end
-
-            local targetPlayer = nil
-            for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-                if p.Name:lower():find(query, 1, true) or p.DisplayName:lower():find(query, 1, true) then
-                    targetPlayer = p
-                    break
-                end
-            end
-
-            if not targetPlayer then
-                DataDisplay.Text = "<br/><font color='rgb(240,80,80)'><b>ERROR:</b> Target profile offline or missing.</font>"
-                SearchAvatar.Image = "rbxassetid://6074246132"
-                return
-            end
-
-            -- Update Avatar Visual Assets
-            SearchAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
-
-            -- Extract state indicators securely
-            local df = targetPlayer:FindFirstChild("DataFolder")
-            local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
-            local state = "ALIVE"
-            local item = "None"
-            
-            local char = targetPlayer.Character
-            if char then
-                local humanoid = char:FindFirstChildOfClass("Humanoid")
-                local be = char:FindFirstChild("BodyEffects")
-                local currentTool = char:FindFirstChildOfClass("Tool")
+                end)
                 
-                if currentTool then item = currentTool.Name end
-                
-                if humanoid and humanoid.Health <= 0 then state = "DEAD"
-                elseif be and be:FindFirstChild("K.O") and be["K.O"].Value then state = "KNOCKED OUT"
-                elseif char:FindFirstChild("Christmas_Sock") then state = "BAGGED"
-                elseif char:FindFirstChildOfClass("ForceField") then state = "FORCEFIELD"
-                elseif humanoid.MoveDirection.Magnitude > 0 then state = "MOVING" end
-            else
-                state = "UNLOADED"
+                Option.MouseButton1Down:Connect(function()
+                    for _, child in pairs(DropdownOptionContainer:GetChildren()) do
+                        if child:IsA("TextButton") then
+                            child.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+                            local stroke = child:FindFirstChildOfClass("UIStroke")
+                            if stroke then stroke.Color = Color3.fromRGB(35, 35, 38) end
+                        end
+                    end
+
+                    Option.BackgroundColor3 = Color3.fromRGB(18, 28, 35)
+                    OptionStroke.Color = Color3.fromRGB(137, 246, 255)
+                end)
+
+                Option.MouseButton1Down:Connect(function()
+                    DropDownEnabled = false
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                    task.wait(0.2)
+                    DropdownOptionContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    callback(v)
+                    task.wait(0.3)
+                    makeelements(true)
+                    DropdownContainer.Visible = false
+                end) -- droplist ended
             end
-
-            -- Format and inject raw text strings into UI layout
-            DataDisplay.Text = string.format(
-                "<b>@%s</b><br/>" ..
-                "💵 Cash: <font color='rgb(100,220,140)'>$%s</font><br/>" ..
-                "🛡️ State: %s<br/>" ..
-                "🎒 Tool: %s<br/>" ..
-                "📅 Age: %s Days",
-                targetPlayer.Name,
-                tostring(cash):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""),
-                state, item, tostring(targetPlayer.AccountAge)
-            )
         end
-
-        -- Hook up activation connections
-        SearchButton.MouseButton1Click:Connect(ExecutionSequence)
-        SearchBox.FocusLost:Connect(function(enterPressed) if enterPressed then ExecutionSequence() end end)
+        return PageElements
     end
-
-    return PageElements
 end
 
 function Library:CreateAlternativePage(alternativeName)
@@ -1141,6 +1153,7 @@ function Library:CreateAlternativePage(alternativeName)
     end
 
     function PageYep:addLabel(name, text)
+        -- Instead of passing parentPage, just find the currently visible page
         local ActivePage = nil
         for _, v in pairs(PageFolder:GetChildren()) do
             if v.Visible == true then
@@ -1151,7 +1164,7 @@ function Library:CreateAlternativePage(alternativeName)
         
         local Label = Instance.new("TextLabel")
         Label.Name = name
-        Label.Parent = ActivePage or PageFolder:GetChildren()[1] -- Fallback if none are visible
+        Label.Parent = ActivePage or PageFolder:GetChildren()[1] -- Fallback
         Label.Size = UDim2.new(0, 280, 0, 20)
         Label.BackgroundTransparency = 1
         Label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1161,6 +1174,7 @@ function Library:CreateAlternativePage(alternativeName)
         return Label 
     end
 
+    -- Add this inside your PageYep table
     function PageYep:createTargetInfoBox()
         local InfoContainer = Instance.new("Frame")
         InfoContainer.Name = "TargetInfoContainer"
@@ -1208,7 +1222,7 @@ function Library:CreateAlternativePage(alternativeName)
         InfoText.Size = UDim2.new(1, 0, 1, 0)
         InfoText.BackgroundTransparency = 1
         InfoText.TextColor3 = Color3.fromRGB(200, 200, 200)
-        InfoText.Font = Enum.Font.RobotoMono
+        InfoText.Font = Enum.Font.RobotoMono -- Monospace looks much more "Pro"
         InfoText.TextSize = 12
         InfoText.TextWrapped = true
         InfoText.TextXAlignment = Enum.TextXAlignment.Left
