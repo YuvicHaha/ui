@@ -428,7 +428,7 @@ function Library:CreateWindow(windowname,windowinfo)
             
         end
 
-        function PageElements:addToggle(togglename,callback)
+        function PageElements:addToggle(togglename,callback,defaultvalue)
             local ToggleHolder = Instance.new("Frame")
             local ToggleHolderCorner = Instance.new("UICorner")
             local ToggleTitle = Instance.new("TextLabel")
@@ -439,7 +439,8 @@ function Library:CreateWindow(windowname,windowinfo)
             local ToggleBallCorner = Instance.new("UICorner")
 
             local callback = callback or function() end
-            local ToggleEnabled = false
+            -- Check if a default value was provided, otherwise default to false
+            local ToggleEnabled = (defaultvalue == true)
 
             ToggleHolder.Name = "ToggleHolder"
             ToggleHolder.Parent = Home
@@ -493,27 +494,33 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleBall.Name = "ToggleBall"
             ToggleBall.Parent = ToggleFrame
             ToggleBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleBall.Position = UDim2.new(0.123000003, 0, 0.158000007, 0)
             ToggleBall.Size = UDim2.new(0, 14, 0, 12)
             
             ToggleBallCorner.CornerRadius = UDim.new(0, 100)
             ToggleBallCorner.Name = "ToggleBallCorner"
             ToggleBallCorner.Parent = ToggleBall
 
+            -- SET DEFAULT VISUAL STATE ON LOAD
+            if ToggleEnabled then
+                ToggleBall.Position = UDim2.new(0.455, 0, 0.158, 0)
+                -- Safely execute the callback immediately when the UI builds
+                task.spawn(function() pcall(callback, true) end)
+            else
+                ToggleBall.Position = UDim2.new(0.123, 0, 0.158, 0)
+            end
+
             ToggleButton.MouseButton1Down:Connect(function()
                 ToggleEnabled = not ToggleEnabled
                 if ToggleEnabled then 
                     ToggleHolder.BackgroundColor3 = Color3.fromRGB(16,16,16)
                     ToggleBall:TweenPosition(UDim2.new(0.455, 0,0.158, 0),"Out","Linear",0.1)
-                    wait(0.05)
+                    task.wait(0.05)
                     ToggleHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
-                    ToggleBall:TweenPosition(UDim2.new(0.455, 0,0.158, 0),"Out","Linear",0.1)
                 else
                     ToggleHolder.BackgroundColor3 = Color3.fromRGB(16,16,16)
                     ToggleBall:TweenPosition(UDim2.new(0.123, 0,0.158, 0),"Out","Linear",0.1)
-                    wait(0.05)
+                    task.wait(0.05)
                     ToggleHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
-                    ToggleBall:TweenPosition(UDim2.new(0.123, 0,0.158, 0),"Out","Linear",0.1)
                 end
                 pcall(callback,ToggleEnabled)
             end)
