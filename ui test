@@ -740,7 +740,7 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownButton.Text = ""
             DropdownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
             DropdownButton.TextSize = 14.000
-            
+
             DropdownIcon.Name = "DropdownIcon"
             DropdownIcon.Parent = DropdownButton
             DropdownIcon.BackgroundTransparency = 1.000
@@ -774,7 +774,7 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownOptionContainer.Position = UDim2.new(0, 0, 0.0782608688, 0)
             DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
             DropdownOptionContainer.Visible = false
-            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0,scrollsize, 0) or UDim2.new(0,0,5,0)
+            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, scrollsize, 0) or UDim2.new(0,0,5,0)
             DropdownOptionContainer.ScrollBarThickness = 3
             
             DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
@@ -782,16 +782,91 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
             DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
-
-            -- Dropdown Toggle 
-             
-            local function makeelements(bool)
-                for i,v in pairs(Home:GetChildren()) do 
-                    if v:IsA("Frame") and v ~= DropdownHolder then 
-                        v.Visible = bool
-                    end
+                
+            DropdownButton.MouseButton1Down:Connect(function()
+                if DropDownEnabled == false then 
+                    DropDownEnabled = true
+                    makeelements(false)
+                    DropdownContainer.Visible = true
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.3)
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
+                    wait(0.3)
+                    DropdownOptionContainer.Visible = true
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.2)
+                    wait(0.09)
+                    Home.CanvasPosition = Vector2.new(0,0)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)
+                else
+                    DropDownEnabled = false
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                    wait(0.2)
+                    DropdownOptionContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    wait(0.3)
+                    makeelements(true)
+                    DropdownContainer.Visible = false
+                    wait(0.09)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1)
                 end
+            end)    
+
+            for i,v in pairs(list) do  
+                local Option = Instance.new("TextButton")
+                local OptionCorner = Instance.new("UICorner")
+
+                Option.Name = "Option"
+                Option.Parent = DropdownOptionContainer
+                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+                Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
+                Option.Size = UDim2.new(0, 283, 0, 22)
+                Option.AutoButtonColor = false
+                Option.Font = Enum.Font.GothamSemibold
+                Option.Text = v
+                Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Option.TextSize = 10.000
+                
+                OptionCorner.CornerRadius = UDim.new(0, 6)
+                OptionCorner.Name = "OptionCorner"
+                OptionCorner.Parent = Option
+
+                Option.MouseEnter:Connect(function()
+                    Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
+                end)
+                
+                Option.MouseLeave:Connect(function()
+                    Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
+                end)
+                
+                Option.MouseButton1Down:Connect(function()
+                    for _,val in pairs(Option.Parent:GetChildren()) do
+                        if val:IsA("GuiButton") and val ~= Option then
+                            val.TextColor3 = Color3.fromRGB(255,255,255)
+                        end
+                    end
+                    Option.TextColor3 = Color3.fromRGB(137, 246, 255)
+                end)
+
+                Option.MouseButton1Down:Connect(function()
+                    DropDownEnabled = false
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                    wait(0.2)
+                    DropdownOptionContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    callback(v)
+                    wait(0.3)
+                    makeelements(true)
+                    DropdownContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1)
+                end)
             end
+            return DropdownHolder
+        end
             function PageElements:addPlayerLookup(titleText)
     local LookupFrame = Instance.new("Frame")
     local LookupCorner = Instance.new("UICorner")
