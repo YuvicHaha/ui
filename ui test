@@ -756,7 +756,7 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
             DropdownContainer.BorderSizePixel = 0
             DropdownContainer.ClipsDescendants = true
-            DropdownContainer.Position = UDim2.new(0, 0, 1.15, 0)
+            DropdownContainer.Position = UDim2.new(0, 0, 1.34615386, 0)
             DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
             DropdownContainer.Visible = false
             
@@ -771,18 +771,17 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownOptionContainer.BackgroundTransparency = 1.000
             DropdownOptionContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
             DropdownOptionContainer.BorderSizePixel = 0
-            DropdownOptionContainer.Position = UDim2.new(0, 0, 0.02, 0)
+            DropdownOptionContainer.Position = UDim2.new(0, 0, 0.0782608688, 0)
             DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
             DropdownOptionContainer.Visible = false
-            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, scrollsize or 4, 0)
-            DropdownOptionContainer.ScrollBarThickness = 4
-            DropdownOptionContainer.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 50)
+            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0,scrollsize, 0) or UDim2.new(0,0,5,0)
+            DropdownOptionContainer.ScrollBarThickness = 3
             
             DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
             DropdownOptionContainerLayout.Parent = DropdownOptionContainer
             DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
             DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            DropdownOptionContainerLayout.Padding = UDim.new(0, 6)
+            DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
 
             -- Dropdown Toggle 
              
@@ -950,184 +949,86 @@ end
                     DropDownEnabled = true
                     makeelements(false)
                     DropdownContainer.Visible = true
-                    DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 220), "Out", "Linear", 0.25)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.3)
                     DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
-                    task.wait(0.25)
+                    wait(0.3)
                     DropdownOptionContainer.Visible = true
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 210), "Out", "Linear", 0.15)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.2)
+                    wait(0.09)
                     Home.CanvasPosition = Vector2.new(0,0)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)-- check
                 else
                     DropDownEnabled = false
-                    DropdownIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.15)
-                    task.wait(0.15)
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                    wait(0.2)
                     DropdownOptionContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.2)
-                    task.wait(0.2)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    wait(0.3)
                     makeelements(true)
                     DropdownContainer.Visible = false
+                    wait(0.09)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
                 end
             end)	
 
             for i,v in pairs(list) do  
-                local targetPlayer = nil
-                local matchedName = tostring(v)
-                
-                -- Check if item in list matches an online player name or display name
-                for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-                    if p.Name:lower() == matchedName:lower() or p.DisplayName:lower() == matchedName:lower() then
-                        targetPlayer = p
-                        break
-                    end
-                end
-
                 local Option = Instance.new("TextButton")
                 local OptionCorner = Instance.new("UICorner")
-                local OptionStroke = Instance.new("UIStroke")
 
-                Option.Name = "Option_" .. matchedName
+                Option.Name = "Option"
                 Option.Parent = DropdownOptionContainer
-                Option.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-                Option.Size = UDim2.new(0, 274, 0, 50) -- Taller layout size for avatar + player telemetry details
+                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+                Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
+                Option.Size = UDim2.new(0, 283, 0, 22)
                 Option.AutoButtonColor = false
-                Option.Text = ""
+                Option.Font = Enum.Font.GothamSemibold
+                Option.Text = v
+                Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Option.TextSize = 10.000
                 
                 OptionCorner.CornerRadius = UDim.new(0, 6)
                 OptionCorner.Name = "OptionCorner"
                 OptionCorner.Parent = Option
 
-                OptionStroke.Thickness = 1.5
-                OptionStroke.Color = Color3.fromRGB(35, 35, 38)
-                OptionStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                OptionStroke.Parent = Option
-
-                -- If item matches an online player, build advanced profile layout cards
-                if targetPlayer then
-                    local AvatarImg = Instance.new("ImageLabel")
-                    AvatarImg.Size = UDim2.new(0, 38, 0, 38)
-                    AvatarImg.Position = UDim2.new(0, 6, 0.5, -19)
-                    AvatarImg.BackgroundTransparency = 1
-                    AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
-                    AvatarImg.Parent = Option
-
-                    local ImgCorner = Instance.new("UICorner")
-                    ImgCorner.CornerRadius = UDim.new(1, 0)
-                    ImgCorner.Parent = AvatarImg
-
-                    local InfoLabel = Instance.new("TextLabel")
-                    InfoLabel.Size = UDim2.new(1, -54, 1, -6)
-                    InfoLabel.Position = UDim2.new(0, 50, 0, 3)
-                    InfoLabel.BackgroundTransparency = 1
-                    InfoLabel.Font = Enum.Font.GothamBold
-                    InfoLabel.TextSize = 10
-                    InfoLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
-                    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    InfoLabel.TextYAlignment = Enum.TextYAlignment.Center
-                    InfoLabel.RichText = true
-                    InfoLabel.Parent = Option
-
-                    -- Continuous execution frame monitoring sequence loop
-                    task.spawn(function()
-                        while Option and Option.Parent do
-                            if targetPlayer and targetPlayer:IsDescendantOf(game:GetService("Players")) then
-                                local df = targetPlayer:FindFirstChild("DataFolder")
-                                local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
-                                
-                                local state = "Alive"
-                                local stateColor = "rgb(40,200,140)"
-                                local hasFF = "No"
-                                
-                                local char = targetPlayer.Character
-                                if char then
-                                    local be = char:FindFirstChild("BodyEffects")
-                                    if be then
-                                        if be:FindFirstChild("K.O") and be["K.O"].Value then
-                                            state = "Knocked"
-                                            stateColor = "rgb(230,140,10)"
-                                        elseif be:FindFirstChild("Dead") and be.Dead.Value then
-                                            state = "Dead"
-                                            stateColor = "rgb(220,60,60)"
-                                        end
-                                    end
-                                    if char:FindFirstChild("Christmas_Sock") or char:FindFirstChild("[BrownBag]") then
-                                        state = "Bagged"
-                                        stateColor = "rgb(170,100,240)"
-                                    end
-                                    if char:FindFirstChildOfClass("ForceField") then
-                                        hasFF = "Yes"
-                                    end
-                                else
-                                    state = "No Character"
-                                    stateColor = "rgb(120,120,120)"
-                                end
-
-                                InfoLabel.Text = "<b>" .. targetPlayer.Name .. "</b> <font color='rgb(110,210,255)'>($" .. tostring(cash) .. ")</font>\n" ..
-                                                 "Status: <font color='" .. stateColor .. "'>" .. state .. "</font> | FF: " .. hasFF
-                            else
-                                InfoLabel.Text = "<b>" .. matchedName .. "</b>\n<font color='rgb(220,60,60)'>Left Game</font>"
-                                break
-                            end
-                            task.wait(1)
-                        end
-                    end)
-                else
-                    -- Fallback layout design template for non-player default strings
-                    local SimpleText = Instance.new("TextLabel")
-                    SimpleText.Size = UDim2.new(1, 0, 1, 0)
-                    SimpleText.BackgroundTransparency = 1
-                    SimpleText.Font = Enum.Font.GothamSemibold
-                    SimpleText.TextSize = 11
-                    SimpleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    SimpleText.Text = matchedName
-                    SimpleText.Parent = Option
-                end
-
                 Option.MouseEnter:Connect(function()
-                    if OptionStroke.Color ~= Color3.fromRGB(137, 246, 255) then
-                        Option.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
-                    end
+                    Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
                 end)
                 
                 Option.MouseLeave:Connect(function()
-                    if OptionStroke.Color ~= Color3.fromRGB(137, 246, 255) then
-                        Option.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-                    end
+                    Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
                 end)
                 
                 Option.MouseButton1Down:Connect(function()
-                    for _, child in pairs(DropdownOptionContainer:GetChildren()) do
-                        if child:IsA("TextButton") then
-                            child.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-                            local stroke = child:FindFirstChildOfClass("UIStroke")
-                            if stroke then stroke.Color = Color3.fromRGB(35, 35, 38) end
+                    for i,v in pairs(Option.Parent:GetChildren()) do
+                        if v:IsA("GuiButton") and v ~= Option then
+                            v.TextColor3 = Color3.fromRGB(255,255,255)
                         end
                     end
-
-                    Option.BackgroundColor3 = Color3.fromRGB(18, 28, 35)
-                    OptionStroke.Color = Color3.fromRGB(137, 246, 255)
+                    Option.TextColor3 = Color3.fromRGB(137, 246, 255)
                 end)
 
                 Option.MouseButton1Down:Connect(function()
                     DropDownEnabled = false
                     DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
                     DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
-                    task.wait(0.2)
+                    wait(0.2)
                     DropdownOptionContainer.Visible = false
                     DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
                     callback(v)
-                    task.wait(0.3)
+                    wait(0.3)
                     makeelements(true)
                     DropdownContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
                 end) -- droplist ended
             end
         end
         return PageElements
     end
-end
-
-function Library:CreateAlternativePage(alternativeName)
-    local PageYep = {}
-
     function PageYep:Notify(text)
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(0, 150, 0, 20)
@@ -1153,85 +1054,82 @@ function Library:CreateAlternativePage(alternativeName)
     end
 
     function PageYep:addLabel(name, text)
-        -- Instead of passing parentPage, just find the currently visible page
-        local ActivePage = nil
-        for _, v in pairs(PageFolder:GetChildren()) do
-            if v.Visible == true then
-                ActivePage = v
-                break
-            end
+    -- Instead of passing parentPage, just find the currently visible page
+    local ActivePage = nil
+    for _, v in pairs(PageFolder:GetChildren()) do
+        if v.Visible == true then
+            ActivePage = v
+            break
         end
-        
-        local Label = Instance.new("TextLabel")
-        Label.Name = name
-        Label.Parent = ActivePage or PageFolder:GetChildren()[1] -- Fallback
-        Label.Size = UDim2.new(0, 280, 0, 20)
-        Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Label.Text = text
-        Label.Font = Enum.Font.GothamSemibold
-        Label.TextSize = 12
-        return Label 
     end
+    
+    local Label = Instance.new("TextLabel")
+    Label.Name = name
+    Label.Parent = ActivePage or PageFolder:GetChildren()[1] -- Fallback
+    Label.Size = UDim2.new(0, 280, 0, 20)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Text = text
+    Label.Font = Enum.Font.GothamSemibold
+    Label.TextSize = 12
+    return Label 
+end
+-- Add this inside your PageYep table
+function PageYep:createTargetInfoBox()
+    local InfoContainer = Instance.new("Frame")
+    InfoContainer.Name = "TargetInfoContainer"
+    InfoContainer.Parent = Frame
+    InfoContainer.Size = UDim2.new(0, 160, 0, 223)
+    InfoContainer.Position = UDim2.new(-0.41, 0, 0.168, 0)
+    InfoContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    InfoContainer.Visible = false
+    InfoContainer.BorderSizePixel = 0
+    Instance.new("UICorner", InfoContainer).CornerRadius = UDim.new(0, 10)
+    
+    -- Aesthetic Border
+    local Stroke = Instance.new("UIStroke", InfoContainer)
+    Stroke.Color = Color3.fromRGB(45, 45, 45)
+    Stroke.Thickness = 2
+    
+    -- Main Layout for vertical stacking
+    local Layout = Instance.new("UIListLayout", InfoContainer)
+    Layout.Padding = UDim.new(0, 10)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    -- Top Padding
+    local UIPadding = Instance.new("UIPadding", InfoContainer)
+    UIPadding.PaddingTop = UDim.new(0, 12)
+    
+    -- Avatar
+    local AvatarImage = Instance.new("ImageLabel")
+    AvatarImage.Name = "Avatar"
+    AvatarImage.Parent = InfoContainer
+    AvatarImage.Size = UDim2.new(0, 110, 0, 110)
+    AvatarImage.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    AvatarImage.LayoutOrder = 1
+    AvatarImage.BorderSizePixel = 0
+    Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(0, 8)
 
-    -- Add this inside your PageYep table
-    function PageYep:createTargetInfoBox()
-        local InfoContainer = Instance.new("Frame")
-        InfoContainer.Name = "TargetInfoContainer"
-        InfoContainer.Parent = Frame
-        InfoContainer.Size = UDim2.new(0, 160, 0, 223)
-        InfoContainer.Position = UDim2.new(-0.41, 0, 0.168, 0)
-        InfoContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-        InfoContainer.Visible = false
-        InfoContainer.BorderSizePixel = 0
-        Instance.new("UICorner", InfoContainer).CornerRadius = UDim.new(0, 10)
-        
-        -- Aesthetic Border
-        local Stroke = Instance.new("UIStroke", InfoContainer)
-        Stroke.Color = Color3.fromRGB(45, 45, 45)
-        Stroke.Thickness = 2
-        
-        -- Main Layout for vertical stacking
-        local Layout = Instance.new("UIListLayout", InfoContainer)
-        Layout.Padding = UDim.new(0, 10)
-        Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        Layout.SortOrder = Enum.SortOrder.LayoutOrder
-        
-        -- Top Padding
-        local UIPadding = Instance.new("UIPadding", InfoContainer)
-        UIPadding.PaddingTop = UDim.new(0, 12)
-        
-        -- Avatar
-        local AvatarImage = Instance.new("ImageLabel")
-        AvatarImage.Name = "Avatar"
-        AvatarImage.Parent = InfoContainer
-        AvatarImage.Size = UDim2.new(0, 110, 0, 110)
-        AvatarImage.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        AvatarImage.LayoutOrder = 1
-        AvatarImage.BorderSizePixel = 0
-        Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(0, 8)
+    -- Text Holder (The Info)
+    local TextHolder = Instance.new("Frame", InfoContainer)
+    TextHolder.Size = UDim2.new(1, -30, 0, 110)
+    TextHolder.BackgroundTransparency = 1
+    TextHolder.LayoutOrder = 2
+    
+    local InfoText = Instance.new("TextLabel", TextHolder)
+    InfoText.Name = "Info"
+    InfoText.Size = UDim2.new(1, 0, 1, 0)
+    InfoText.BackgroundTransparency = 1
+    InfoText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    InfoText.Font = Enum.Font.RobotoMono -- Monospace looks much more "Pro"
+    InfoText.TextSize = 12
+    InfoText.TextWrapped = true
+    InfoText.TextXAlignment = Enum.TextXAlignment.Left
+    InfoText.TextYAlignment = Enum.TextYAlignment.Top
 
-        -- Text Holder (The Info)
-        local TextHolder = Instance.new("Frame", InfoContainer)
-        TextHolder.Size = UDim2.new(1, -30, 0, 110)
-        TextHolder.BackgroundTransparency = 1
-        TextHolder.LayoutOrder = 2
-        
-        local InfoText = Instance.new("TextLabel", TextHolder)
-        InfoText.Name = "Info"
-        InfoText.Size = UDim2.new(1, 0, 1, 0)
-        InfoText.BackgroundTransparency = 1
-        InfoText.TextColor3 = Color3.fromRGB(200, 200, 200)
-        InfoText.Font = Enum.Font.RobotoMono -- Monospace looks much more "Pro"
-        InfoText.TextSize = 12
-        InfoText.TextWrapped = true
-        InfoText.TextXAlignment = Enum.TextXAlignment.Left
-        InfoText.TextYAlignment = Enum.TextYAlignment.Top
-
-        return InfoContainer, AvatarImage, InfoText
-    end
-
+    return InfoContainer, AvatarImage, InfoText
+end
     return PageYep
 end
-
 return Library
