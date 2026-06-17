@@ -691,192 +691,108 @@ function Library:CreateWindow(windowname,windowinfo)
             --
         end
 
-        function PageElements:addDropdown(dropdownname, list, scrollsize, callback)
-    local DropdownHolder = Instance.new("Frame")
-    local DropdownHolderCorner = Instance.new("UICorner")
-    local DropdownTitle = Instance.new("TextLabel")
-    local DropdownButton = Instance.new("TextButton")
-    local DropdownIcon = Instance.new("ImageLabel")
-    local DropdownContainer = Instance.new("Frame")
-    local DropdownContainerCorner = Instance.new("UICorner")
-    local DropdownOptionContainer = Instance.new("ScrollingFrame")
-    local DropdownOptionContainerLayout = Instance.new("UIListLayout")
+        function PageElements:addDropdown(dropdownname,list,scrollsize,callback)
+            local DropdownHolder = Instance.new("Frame")
+            local DropdownHolderCorner = Instance.new("UICorner")
+            local DropdownTitle = Instance.new("TextLabel")
+            local DropdownButton = Instance.new("TextButton")
+            local DropdownIcon = Instance.new("ImageLabel")
+            local DropdownContainer = Instance.new("Frame")
+            local DropdownContainerCorner = Instance.new("UICorner")
+            local DropdownOptionContainer = Instance.new("ScrollingFrame")
+            local DropdownOptionContainerLayout = Instance.new("UIListLayout")
 
-    local callback = callback or function() end
-    local DropDownEnabled = false
+            local callback = callback or function() end
+            local DropDownEnabled = false
 
-    DropdownHolder.Name = "DropdownHolder"
-    DropdownHolder.Parent = Home
-    DropdownHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownHolder.BorderColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownHolder.BorderSizePixel = 0
-    DropdownHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
-    DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
-    
-    DropdownHolderCorner.CornerRadius = UDim.new(0, 5)
-    DropdownHolderCorner.Name = "DropdownHolderCorner"
-    DropdownHolderCorner.Parent = DropdownHolder
-    
-    DropdownTitle.Name = "DropdownTitle"
-    DropdownTitle.Parent = DropdownHolder
-    DropdownTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownTitle.BackgroundTransparency = 1.000
-    DropdownTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownTitle.BorderSizePixel = 0
-    DropdownTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
-    DropdownTitle.Size = UDim2.new(0, 195, 0, 24)
-    DropdownTitle.Font = Enum.Font.GothamSemibold
-    DropdownTitle.Text = dropdownname
-    DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DropdownTitle.TextSize = 11.000
-    DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
-    
-    DropdownButton.Name = "DropdownButton"
-    DropdownButton.Parent = DropdownHolder
-    DropdownButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    DropdownButton.BackgroundTransparency = 1.000
-    DropdownButton.Size = UDim2.new(0, 288, 0, 26)
-    DropdownButton.Font = Enum.Font.SourceSans
-    DropdownButton.Text = ""
-    DropdownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-    DropdownButton.TextSize = 14.000
-    
-    DropdownIcon.Name = "DropdownIcon"
-    DropdownIcon.Parent = DropdownButton
-    DropdownIcon.BackgroundTransparency = 1.000
-    DropdownIcon.Position = UDim2.new(0.885416687, 0, 0.192307711, 0)
-    DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
-    DropdownIcon.Image = "rbxassetid://3944690667"
-    DropdownIcon.ScaleType = Enum.ScaleType.Fit
-    
-    DropdownContainer.Name = "DropdownContainer"
-    DropdownContainer.Parent = DropdownHolder
-    DropdownContainer.Active = true
-    DropdownContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownContainer.BorderSizePixel = 0
-    DropdownContainer.ClipsDescendants = true
-    DropdownContainer.Position = UDim2.new(0, 0, 1.34615386, 0)
-    DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
-    DropdownContainer.Visible = false
-    
-    DropdownContainerCorner.CornerRadius = UDim.new(0, 6)
-    DropdownContainerCorner.Name = "DropdownContainerCorner"
-    DropdownContainerCorner.Parent = DropdownContainer
-    
-    DropdownOptionContainer.Name = "DropdownOptionContainer"
-    DropdownOptionContainer.Parent = DropdownContainer
-    DropdownOptionContainer.Active = true
-    DropdownOptionContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownOptionContainer.BackgroundTransparency = 1.000
-    DropdownOptionContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
-    DropdownOptionContainer.BorderSizePixel = 0
-    DropdownOptionContainer.Position = UDim2.new(0, 0, 0.0782608688, 0)
-    DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
-    DropdownOptionContainer.Visible = false
-    DropdownOptionContainer.CanvasSize = UDim2.new(0, 0, scrollsize, 0) or UDim2.new(0, 0, 5, 0)
-    DropdownOptionContainer.ScrollBarThickness = 3
-    
-    DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
-    DropdownOptionContainerLayout.Parent = DropdownOptionContainer
-    DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
-     
-    local function makeelements(bool)
-        for i, v in pairs(Home:GetChildren()) do 
-            if v:IsA("Frame") and v ~= DropdownHolder then 
-                v.Visible = bool
-            end
-        end
-    end
+            DropdownHolder.Name = "DropdownHolder"
+            DropdownHolder.Parent = Home
+            DropdownHolder.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownHolder.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownHolder.BorderSizePixel = 0
+            DropdownHolder.Position = UDim2.new(0.0167785231, 0, 0, 0)
+            DropdownHolder.Size = UDim2.new(0, 288, 0, 26)
             
-    DropdownButton.MouseButton1Down:Connect(function()
-        if DropDownEnabled == false then 
-            DropDownEnabled = true
-            makeelements(false)
-            DropdownContainer.Visible = true
-            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 115), "Out", "Linear", 0.3)
-            DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
-            task.wait(0.3)
-            DropdownOptionContainer.Visible = true
-            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 106), "Out", "Linear", 0.2)
-            task.wait(0.09)
-            Home.CanvasPosition = Vector2.new(0, 0)
-            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 115), "Out", "Linear", 0.1)
-            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 106), "Out", "Linear", 0.1)
-        else
-            DropDownEnabled = false
-            DropdownIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.2)
-            task.wait(0.2)
-            DropdownOptionContainer.Visible = false
-            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.3)
-            task.wait(0.3)
-            makeelements(true)
+            DropdownHolderCorner.CornerRadius = UDim.new(0, 5)
+            DropdownHolderCorner.Name = "DropdownHolderCorner"
+            DropdownHolderCorner.Parent = DropdownHolder
+            
+            DropdownTitle.Name = "DropdownTitle"
+            DropdownTitle.Parent = DropdownHolder
+            DropdownTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownTitle.BackgroundTransparency = 1.000
+            DropdownTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownTitle.BorderSizePixel = 0
+            DropdownTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
+            DropdownTitle.Size = UDim2.new(0, 195, 0, 24)
+            DropdownTitle.Font = Enum.Font.GothamSemibold
+            DropdownTitle.Text = dropdownname
+            DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            DropdownTitle.TextSize = 11.000
+            DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+            
+            DropdownButton.Name = "DropdownButton"
+            DropdownButton.Parent = DropdownHolder
+            DropdownButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            DropdownButton.BackgroundTransparency = 1.000
+            DropdownButton.Size = UDim2.new(0, 288, 0, 26)
+            DropdownButton.Font = Enum.Font.SourceSans
+            DropdownButton.Text = ""
+            DropdownButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+            DropdownButton.TextSize = 14.000
+            
+            DropdownIcon.Name = "DropdownIcon"
+            DropdownIcon.Parent = DropdownButton
+            DropdownIcon.BackgroundTransparency = 1.000
+            DropdownIcon.Position = UDim2.new(0.885416687, 0, 0.192307711, 0)
+            DropdownIcon.Size = UDim2.new(0, 24, 0, 16)
+            DropdownIcon.Image = "rbxassetid://3944690667"
+            DropdownIcon.ScaleType = Enum.ScaleType.Fit
+            
+            DropdownContainer.Name = "DropdownContainer"
+            DropdownContainer.Parent = DropdownHolder
+            DropdownContainer.Active = true
+            DropdownContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownContainer.BorderSizePixel = 0
+            DropdownContainer.ClipsDescendants = true
+            DropdownContainer.Position = UDim2.new(0, 0, 1.34615386, 0)
+            DropdownContainer.Size = UDim2.new(0, 288, 0, 4)
             DropdownContainer.Visible = false
-            task.wait(0.09)
-            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.1)
-            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.1)
-        end
-    end)    
+            
+            DropdownContainerCorner.CornerRadius = UDim.new(0, 6)
+            DropdownContainerCorner.Name = "DropdownContainerCorner"
+            DropdownContainerCorner.Parent = DropdownContainer
+            
+            DropdownOptionContainer.Name = "DropdownOptionContainer"
+            DropdownOptionContainer.Parent = DropdownContainer
+            DropdownOptionContainer.Active = true
+            DropdownOptionContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownOptionContainer.BackgroundTransparency = 1.000
+            DropdownOptionContainer.BorderColor3 = Color3.fromRGB(17, 17, 17)
+            DropdownOptionContainer.BorderSizePixel = 0
+            DropdownOptionContainer.Position = UDim2.new(0, 0, 0.0782608688, 0)
+            DropdownOptionContainer.Size = UDim2.new(0, 288, 0, 8)
+            DropdownOptionContainer.Visible = false
+            DropdownOptionContainer.CanvasSize = UDim2.new(0, 0,scrollsize, 0) or UDim2.new(0,0,5,0)
+            DropdownOptionContainer.ScrollBarThickness = 3
+            
+            DropdownOptionContainerLayout.Name = "DropdownOptionContainerLayout"
+            DropdownOptionContainerLayout.Parent = DropdownOptionContainer
+            DropdownOptionContainerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
 
-    for i, v in pairs(list) do  
-        local Option = Instance.new("TextButton")
-        local OptionCorner = Instance.new("UICorner")
-
-        Option.Name = "Option"
-        Option.Parent = DropdownOptionContainer
-        Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-        Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
-        Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
-        Option.Size = UDim2.new(0, 283, 0, 22)
-        Option.AutoButtonColor = false
-        Option.Font = Enum.Font.GothamSemibold
-        Option.Text = v
-        Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Option.TextSize = 10.000
-        
-        OptionCorner.CornerRadius = UDim.new(0, 6)
-        OptionCorner.Name = "OptionCorner"
-        OptionCorner.Parent = Option
-
-        Option.MouseEnter:Connect(function()
-            Option.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-        end)
-        
-        Option.MouseLeave:Connect(function()
-            Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-        end)
-        
-        Option.MouseButton1Down:Connect(function()
-            for _, val in pairs(Option.Parent:GetChildren()) do
-                if val:IsA("GuiButton") and val ~= Option then
-                    val.TextColor3 = Color3.fromRGB(255, 255, 255)
+            -- Dropdown Toggle 
+             
+            local function makeelements(bool)
+                for i,v in pairs(Home:GetChildren()) do 
+                    if v:IsA("Frame") and v ~= DropdownHolder then 
+                        v.Visible = bool
+                    end
                 end
             end
-            Option.TextColor3 = Color3.fromRGB(137, 246, 255)
-        end)
-
-        Option.MouseButton1Down:Connect(function()
-            DropDownEnabled = false
-            DropdownIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.2)
-            task.wait(0.2)
-            DropdownOptionContainer.Visible = false
-            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.3)
-            callback(v)
-            task.wait(0.3)
-            makeelements(true)
-            DropdownContainer.Visible = false
-            DropdownContainer:TweenSize(UDim2.new(0, 288, 0, 4), "Out", "Linear", 0.1)
-            DropdownOptionContainer:TweenSize(UDim2.new(0, 288, 0, 8), "Out", "Linear", 0.1)
-        end)
-    end
-    return DropdownHolder
-end
-
-function PageElements:addPlayerLookup(titleText)
+            function PageElements:addPlayerLookup(titleText)
     local LookupFrame = Instance.new("Frame")
     local LookupCorner = Instance.new("UICorner")
     local SearchBox = Instance.new("TextBox")
@@ -888,15 +804,17 @@ function PageElements:addPlayerLookup(titleText)
     local SearchAvatar = Instance.new("ImageLabel")
     local AvatarCorner = Instance.new("UICorner")
 
+    -- Main Container Styling
     LookupFrame.Name = "PlayerLookupModule"
     LookupFrame.Size = UDim2.new(1, -10, 0, 160)
     LookupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
     LookupFrame.BorderSizePixel = 0
-    LookupFrame.Parent = PageFrame 
+    LookupFrame.Parent = PageFrame -- Maps directly to your library's layout holder
 
     LookupCorner.CornerRadius = UDim.new(0, 6)
     LookupCorner.Parent = LookupFrame
 
+    -- Input Text Box Styling
     SearchBox.Name = "SearchBox"
     SearchBox.Size = UDim2.new(0.7, -10, 0, 32)
     SearchBox.Position = UDim2.new(0, 8, 0, 8)
@@ -911,6 +829,7 @@ function PageElements:addPlayerLookup(titleText)
     BoxCorner.CornerRadius = UDim.new(0, 4)
     BoxCorner.Parent = SearchBox
 
+    -- Trigger Action Button Styling
     SearchButton.Name = "SearchButton"
     SearchButton.Size = UDim2.new(0.3, -10, 0, 32)
     SearchButton.Position = UDim2.new(0.7, 4, 0, 8)
@@ -924,16 +843,18 @@ function PageElements:addPlayerLookup(titleText)
     ButtonCorner.CornerRadius = UDim.new(0, 4)
     ButtonCorner.Parent = SearchButton
 
+    -- Live Avatar Component Viewport
     SearchAvatar.Name = "SearchAvatar"
     SearchAvatar.Size = UDim2.new(0, 100, 0, 100)
     SearchAvatar.Position = UDim2.new(0, 8, 0, 48)
     SearchAvatar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-    SearchAvatar.Image = "rbxassetid://6074246132" 
+    SearchAvatar.Image = "rbxassetid://6074246132" -- Default Standby Placeholder
     SearchAvatar.Parent = LookupFrame
 
     AvatarCorner.CornerRadius = UDim.new(0, 6)
     AvatarCorner.Parent = SearchAvatar
 
+    -- Telemetry Details Layout Display Label
     DataDisplay.Name = "DataDisplay"
     DataDisplay.Size = UDim2.new(1, -124, 0, 100)
     DataDisplay.Position = UDim2.new(0, 116, 0, 48)
@@ -947,6 +868,7 @@ function PageElements:addPlayerLookup(titleText)
     DataDisplay.RichText = true
     DataDisplay.Parent = LookupFrame
 
+    -- Inner Functional Hook Logic Pipeline
     local function ExecutionSequence()
         local query = SearchBox.Text:lower()
         if query == "" then return end
@@ -965,8 +887,10 @@ function PageElements:addPlayerLookup(titleText)
             return
         end
 
+        -- Update Avatar Visual Assets directly inside the UI Element frame layout
         SearchAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
 
+        -- Extract state indicators securely
         local df = targetPlayer:FindFirstChild("DataFolder")
         local cash = (df and df:FindFirstChild("Currency")) and df.Currency.Value or 0
         local state = "ALIVE"
@@ -989,6 +913,7 @@ function PageElements:addPlayerLookup(titleText)
             state = "UNLOADED"
         end
 
+        -- Format and inject raw text strings into the custom template module layout
         DataDisplay.Text = string.format(
             "<b>@%s</b><br/>" ..
             "💵 Cash: <font color='rgb(100,220,140)'>$%s</font><br/>" ..
@@ -1001,48 +926,135 @@ function PageElements:addPlayerLookup(titleText)
         )
     end
 
+    -- Hook up activation connections
     SearchButton.MouseButton1Click:Connect(ExecutionSequence)
     SearchBox.FocusLost:Connect(function(enterPressed) if enterPressed then ExecutionSequence() end end)
-    return LookupFrame
 end
+    function Library:Notify(text)
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(0, 140, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Text = "> " .. text
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 10
+        Label.Parent = LogContainer -- This references the container created above
+        
+        -- Auto-remove logs after 5 seconds
+        game:GetService("Debris"):AddItem(Label, 5)
+    end
+            
+            DropdownButton.MouseButton1Down:Connect(function()
+                if DropDownEnabled == false then 
+                    DropDownEnabled = true
+                    makeelements(false)
+                    DropdownContainer.Visible = true
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.3)
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(137, 246, 255)
+                    wait(0.3)
+                    DropdownOptionContainer.Visible = true
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.2)
+                    wait(0.09)
+                    Home.CanvasPosition = Vector2.new(0,0)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)-- check
+                else
+                    DropDownEnabled = false
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                    wait(0.2)
+                    DropdownOptionContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    wait(0.3)
+                    makeelements(true)
+                    DropdownContainer.Visible = false
+                    wait(0.09)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
+                end
+            end)	
 
-function Library:Notify(text)
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0, 140, 0, 20)
-    Label.BackgroundTransparency = 1
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.Text = "> " .. text
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 10
-    Label.Parent = LogContainer 
-    
-    game:GetService("Debris"):AddItem(Label, 5)
-end
+            for i,v in pairs(list) do  
+                local Option = Instance.new("TextButton")
+                local OptionCorner = Instance.new("UICorner")
 
-function PageYep:Notify(text)
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0, 150, 0, 20)
-    Label.BackgroundTransparency = 1
-    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Label.Font = Enum.Font.Code 
-    Label.TextSize = 11
-    Label.RichText = true
-    Label.Text = "  > " .. text
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.TextTransparency = 1 
-    Label.Parent = Frame:FindFirstChild("LogContainer")
+                Option.Name = "Option"
+                Option.Parent = DropdownOptionContainer
+                Option.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                Option.BorderColor3 = Color3.fromRGB(15, 15, 15)
+                Option.Position = UDim2.new(0.0173611119, 0, 0, 0)
+                Option.Size = UDim2.new(0, 283, 0, 22)
+                Option.AutoButtonColor = false
+                Option.Font = Enum.Font.GothamSemibold
+                Option.Text = v
+                Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Option.TextSize = 10.000
+                
+                OptionCorner.CornerRadius = UDim.new(0, 6)
+                OptionCorner.Name = "OptionCorner"
+                OptionCorner.Parent = Option
 
-    task.spawn(function()
-        for i = 1, 0, -0.2 do
-            Label.TextTransparency = i
-            task.wait(0.03)
+                Option.MouseEnter:Connect(function()
+                    Option.BackgroundColor3 = Color3.fromRGB(10,10,10)
+                end)
+                
+                Option.MouseLeave:Connect(function()
+                    Option.BackgroundColor3 = Color3.fromRGB(15,15,15)
+                end)
+                
+                Option.MouseButton1Down:Connect(function()
+                    for i,v in pairs(Option.Parent:GetChildren()) do
+                        if v:IsA("GuiButton") and v ~= Option then
+                            v.TextColor3 = Color3.fromRGB(255,255,255)
+                        end
+                    end
+                    Option.TextColor3 = Color3.fromRGB(137, 246, 255)
+                end)
+
+                Option.MouseButton1Down:Connect(function()
+                    DropDownEnabled = false
+                    DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.2)
+                    wait(0.2)
+                    DropdownOptionContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.3)
+                    callback(v)
+                    wait(0.3)
+                    makeelements(true)
+                    DropdownContainer.Visible = false
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
+                end) -- droplist ended
+            end
         end
-    end)
+        return PageElements
+    end
+    function PageYep:Notify(text)
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(0, 150, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+        Label.Font = Enum.Font.Code -- Monospace terminal font
+        Label.TextSize = 11
+        Label.RichText = true
+        Label.Text = "  > " .. text
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTransparency = 1 -- Start hidden for fade-in
+        Label.Parent = Frame:FindFirstChild("LogContainer")
 
-    game:GetService("Debris"):AddItem(Label, 6) 
-end
+        -- Smooth Fade-in animation
+        task.spawn(function()
+            for i = 1, 0, -0.2 do
+                Label.TextTransparency = i
+                task.wait(0.03)
+            end
+        end)
 
-function PageYep:addLabel(name, text)
+        game:GetService("Debris"):AddItem(Label, 6) -- Stays for 6 seconds
+    end
+
+    function PageYep:addLabel(name, text)
+    -- Instead of passing parentPage, just find the currently visible page
     local ActivePage = nil
     for _, v in pairs(PageFolder:GetChildren()) do
         if v.Visible == true then
@@ -1053,7 +1065,7 @@ function PageYep:addLabel(name, text)
     
     local Label = Instance.new("TextLabel")
     Label.Name = name
-    Label.Parent = ActivePage or PageFolder:GetChildren()[1] 
+    Label.Parent = ActivePage or PageFolder:GetChildren()[1] -- Fallback
     Label.Size = UDim2.new(0, 280, 0, 20)
     Label.BackgroundTransparency = 1
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1062,7 +1074,7 @@ function PageYep:addLabel(name, text)
     Label.TextSize = 12
     return Label 
 end
-
+-- Add this inside your PageYep table
 function PageYep:createTargetInfoBox()
     local InfoContainer = Instance.new("Frame")
     InfoContainer.Name = "TargetInfoContainer"
@@ -1074,18 +1086,22 @@ function PageYep:createTargetInfoBox()
     InfoContainer.BorderSizePixel = 0
     Instance.new("UICorner", InfoContainer).CornerRadius = UDim.new(0, 10)
     
+    -- Aesthetic Border
     local Stroke = Instance.new("UIStroke", InfoContainer)
     Stroke.Color = Color3.fromRGB(45, 45, 45)
     Stroke.Thickness = 2
     
+    -- Main Layout for vertical stacking
     local Layout = Instance.new("UIListLayout", InfoContainer)
     Layout.Padding = UDim.new(0, 10)
     Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     Layout.SortOrder = Enum.SortOrder.LayoutOrder
     
+    -- Top Padding
     local UIPadding = Instance.new("UIPadding", InfoContainer)
     UIPadding.PaddingTop = UDim.new(0, 12)
     
+    -- Avatar
     local AvatarImage = Instance.new("ImageLabel")
     AvatarImage.Name = "Avatar"
     AvatarImage.Parent = InfoContainer
@@ -1095,6 +1111,7 @@ function PageYep:createTargetInfoBox()
     AvatarImage.BorderSizePixel = 0
     Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(0, 8)
 
+    -- Text Holder (The Info)
     local TextHolder = Instance.new("Frame", InfoContainer)
     TextHolder.Size = UDim2.new(1, -30, 0, 110)
     TextHolder.BackgroundTransparency = 1
@@ -1105,7 +1122,7 @@ function PageYep:createTargetInfoBox()
     InfoText.Size = UDim2.new(1, 0, 1, 0)
     InfoText.BackgroundTransparency = 1
     InfoText.TextColor3 = Color3.fromRGB(200, 200, 200)
-    InfoText.Font = Enum.Font.RobotoMono 
+    InfoText.Font = Enum.Font.RobotoMono -- Monospace looks much more "Pro"
     InfoText.TextSize = 12
     InfoText.TextWrapped = true
     InfoText.TextXAlignment = Enum.TextXAlignment.Left
@@ -1113,9 +1130,6 @@ function PageYep:createTargetInfoBox()
 
     return InfoContainer, AvatarImage, InfoText
 end
-
--- Safely attach independent element libraries back to the root Library object
-Library.PageElements = PageElements
-Library.PageYep = PageYep
-
+    return PageYep
+end
 return Library
