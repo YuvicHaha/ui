@@ -27,32 +27,6 @@ function Library:CreateWindow(windowname,windowinfo)
     local Cre = Instance.new("ImageLabel")
     local YepTitle = Instance.new("TextLabel")
     local YepCorner = Instance.new("UICorner")
-    local LogContainer = Instance.new("Frame")
-    local LogContainerCorner = Instance.new("UICorner")
-    local LogList = Instance.new("UIListLayout")
-
-    LogContainer.Name = "LogContainer"
-    LogContainer.Parent = Frame
-    LogContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    LogContainer.BackgroundTransparency = 0.3
-    -- Position slightly adjusted to ensure it doesn't overlap the main frame when wider
-    LogContainer.Position = UDim2.new(1.04, 0, 0.168, 0) 
-    -- Increased the X size from 160 to 220 for a wider look
-    LogContainer.Size = UDim2.new(0, 220, 0, 223) 
-    LogContainer.BorderSizePixel = 0
-    LogContainer.ClipsDescendants = true 
-
-    local Stroke = Instance.new("UIStroke")
-    Stroke.Color = Color3.fromRGB(40, 40, 40)
-    Stroke.Thickness = 1
-    Stroke.Parent = LogContainer
-    
-    LogContainerCorner.CornerRadius = UDim.new(0, 6)
-    LogContainerCorner.Parent = LogContainer
-    
-    LogList.Parent = LogContainer
-    LogList.Padding = UDim.new(0, 5)
-    LogList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
     fu8rj82n.Name = "fu8rj82n"
     fu8rj82n.Parent = game.CoreGui
@@ -930,19 +904,6 @@ function Library:CreateWindow(windowname,windowinfo)
     SearchButton.MouseButton1Click:Connect(ExecutionSequence)
     SearchBox.FocusLost:Connect(function(enterPressed) if enterPressed then ExecutionSequence() end end)
 end
-    function Library:Notify(text)
-        local Label = Instance.new("TextLabel")
-        Label.Size = UDim2.new(0, 140, 0, 20)
-        Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Label.Text = "> " .. text
-        Label.Font = Enum.Font.Gotham
-        Label.TextSize = 10
-        Label.Parent = LogContainer -- This references the container created above
-        
-        -- Auto-remove logs after 5 seconds
-        game:GetService("Debris"):AddItem(Label, 5)
-    end
             
             DropdownButton.MouseButton1Down:Connect(function()
                 if DropDownEnabled == false then 
@@ -1028,29 +989,6 @@ end
             end
         end
         return PageElements
-    end
-    function PageYep:Notify(text)
-        local Label = Instance.new("TextLabel")
-        Label.Size = UDim2.new(0, 150, 0, 20)
-        Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(200, 200, 200)
-        Label.Font = Enum.Font.Code -- Monospace terminal font
-        Label.TextSize = 11
-        Label.RichText = true
-        Label.Text = "  > " .. text
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTransparency = 1 -- Start hidden for fade-in
-        Label.Parent = Frame:FindFirstChild("LogContainer")
-
-        -- Smooth Fade-in animation
-        task.spawn(function()
-            for i = 1, 0, -0.2 do
-                Label.TextTransparency = i
-                task.wait(0.03)
-            end
-        end)
-
-        game:GetService("Debris"):AddItem(Label, 6) -- Stays for 6 seconds
     end
 
     function PageYep:addLabel(name, text)
