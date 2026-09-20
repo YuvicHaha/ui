@@ -1,0 +1,424 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+local client = _G.client or {}
+client.simulatedphysicsprojectile = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("SimulatedPhysicsProjectile"))
+client.guardnpcbinder = require(ReplicatedStorage:WaitForChild("GuardNPC"):WaitForChild("GuardNPCBinder"))
+client.combatconst = require(ReplicatedStorage:WaitForChild("Combat"):WaitForChild("CombatConsts"))
+client.militaryturretconst = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("MilitaryTurret"):WaitForChild("MilitaryTurretConsts"))
+client.dogconst = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Dog"):WaitForChild("DogConsts"))
+client.combatutils = require(ReplicatedStorage:WaitForChild("Combat"):WaitForChild("CombatUtils"))
+client.playerutil = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("PlayerUtils"))
+client.actionbuttonservice = require(ReplicatedStorage:WaitForChild("ActionButton"):WaitForChild("ActionButtonService"))
+client.settingss = require(ReplicatedStorage:WaitForChild("Resource"):WaitForChild("Settings"))
+client.characterutil = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("CharacterUtil"))
+client.paraglide = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Paraglide"))
+client.alexchassis = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("AlexChassis"))
+client.alexchassis2 = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("AlexChassis2"))
+client.dog = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Dog"):WaitForChild("Dog"))
+client.dogsystem = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Dog"):WaitForChild("DogSystem"))
+client.itemgun = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Item"):WaitForChild("Gun"))
+client.itemsys = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("ItemSystem"):WaitForChild("ItemSystem"))
+client.gunutil = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("GunShop"):WaitForChild("GunUtils"))
+client.gamepasssystem = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Gamepass"):WaitForChild("GamepassSystem"))
+client.pistolitem = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Item"):WaitForChild("Pistol"))
+client.smokegrenadeitem = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("SmokeGrenade"):WaitForChild("SmokeGrenade"))
+client.movementrollservice = require(ReplicatedStorage:WaitForChild("MovementRoll"):WaitForChild("MovementRollService"))
+client.circleac = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("UI")).CircleAction
+client.tase = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Item"):WaitForChild("Taser"))
+client.plasmagun = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Item"):WaitForChild("PlasmaGun"))
+client.geomUtils = require(ReplicatedStorage:WaitForChild("Std"):WaitForChild("GeomUtils"))
+client.vehiclelinkbinder = require(ReplicatedStorage:WaitForChild("VehicleLink"):WaitForChild("VehicleLinkBinder"))
+client.duck = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Robbery"):WaitForChild("TombRobbery"):WaitForChild("TombRobberySystem")).duck
+client.vehicleutils = require(ReplicatedStorage:WaitForChild("Vehicle"):WaitForChild("VehicleUtils"))
+client.onvehicleentered = client.vehicleutils.OnVehicleEntered
+client.onvehicleexited = client.vehicleutils.OnVehicleExited
+client.onlocalitemequipped = client.itemsys.OnLocalItemEquipped
+client.onlocalitemunequipped = client.itemsys.OnLocalItemUnequipped
+client.raycast = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("RayCast"))
+client.bulletemitter = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("ItemSystem"):WaitForChild("BulletEmitter"))
+client.c4 = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("Item"):WaitForChild("C4"))
+client.wheel = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("Wheel"):WaitForChild("Wheel"))
+client.localization = require(ReplicatedStorage:WaitForChild("Module"):WaitForChild("Localization"))
+client.rocketconsts = require(ReplicatedStorage:WaitForChild("RocketLauncher"):WaitForChild("RocketLauncherConsts"))
+client.dartdispenser = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("DartDispenser"):WaitForChild("DartDispenser"))
+client.rocketworld = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("RocketWorld"))
+client.turret = require(ReplicatedStorage:WaitForChild("Turret2"):WaitForChild("Turret"))
+client.oilrigbinder = require(ReplicatedStorage:WaitForChild("OilRig"):WaitForChild("OilRigBinder"))._constructor
+client.gunshopui = require(ReplicatedStorage:WaitForChild("Game"):WaitForChild("GunShop"):WaitForChild("GunShopUI"))
+client.spotlightbinder = require(ReplicatedStorage:WaitForChild("TrackingSpotlight"):WaitForChild("TrackingSpotlightBinder"))
+client.inventoryitemsystem = require(ReplicatedStorage:WaitForChild("Inventory"):WaitForChild("InventoryItemSystem"))
+client.interval = require(ReplicatedStorage:WaitForChild("Std"):WaitForChild("Interval"))
+client.tankbinder = require(ReplicatedStorage:WaitForChild("Tank"):WaitForChild("TankBinder"))._constructor
+
+client.ori = {
+	hookNearest = client.vehiclelinkbinder and client.vehiclelinkbinder._hookNearest,
+	bulletemitteronlocalhitplayer = client.itemgun.BulletEmitterOnLocalHitPlayer,
+	hittargetwithspeed = client.simulatedphysicsprojectile.HitTargetWithSpeed,
+	isflying = client.paraglide.IsFlying,
+	tase = client.tase.Tase,
+	doesplayerowncached = client.gamepasssystem.doesPlayerOwnCached,
+	update = client.circleac.Update,
+	getequiptime = client.gunutil.getEquipTime,
+	rayignorenon = client.raycast.RayIgnoreNonCollide,
+	plasmashootother = client.plasmagun.ShootOther,
+	pistolsetupmodel = client.pistolitem.SetupModel,
+	rayignore = client.raycast.RayIgnoreNonCollideWithIgnoreList,
+	shoot = client.itemgun.Shoot,
+	circleactionpress = client.circleac.Press,
+	oillaunchblowup = client.oilrigbinder and client.oilrigbinder._launchBlowUp,
+	oillaunchblow = client.oilrigbinder and client.oilrigbinder._launchBlowUp
+}
+
+local Config = {
+	VehicleSearchRadius = 100,
+	VehicleEntryRadius = 15,
+	InitialVehicleAltitude = 100,
+	TargetCruiseAltitude = 500,
+	ReturnVehicleAltitude = 50,
+	TargetCloseDistance = 20,
+	CamaroSpawnDistance = 300,
+	VehicleTooFarDistance = 500,
+	CarMaxRamDuration = 5,
+	AscendSpeed = 100,
+	CruiseSpeed = 150,
+	DescendSpeed = 100,
+	WaypointDelay = 0.2,
+	TpOffset = CFrame.new(0, 0, 0)
+}
+
+local State = {
+	Idle = "Idle", EscapingBuilding = "EscapingBuilding", FindingVehicle = "FindingVehicle", EnteringVehicle = "EnteringVehicle",
+	Ascending = "Ascending", SearchingTarget = "SearchingTarget", PositioningAboveTarget = "PositioningAboveTarget",
+	Descending = "Descending", PoppingTire = "PoppingTire", ExitingVehicle = "ExitingVehicle", EquippingHandcuffs = "EquippingHandcuffs",
+	EjectingTarget = "EjectingTarget", ArrestingTarget = "ArrestingTarget", ReturningToVehicle = "ReturningToVehicle",
+	SpawningCamaro = "SpawningCamaro", Resetting = "Resetting"
+}
+
+local automationToken = 0
+local currentState = State.Idle
+local arrestedBlacklist = {}
+local currentVehicle, lastEnteredVehicle, lastExitedVehicle
+local flightGyro, flightVelocity
+local attemptArrestCache
+local StationWaypoints = _G.StationWaypoints or {}
+
+local function ResetAutomation()
+	automationToken = automationToken + 1
+	currentState = State.Idle
+	currentVehicle = nil
+	if flightGyro then flightGyro:Destroy(); flightGyro = nil end
+	if flightVelocity then flightVelocity:Destroy(); flightVelocity = nil end
+end
+
+local function StopFlight()
+	if flightGyro then flightGyro:Destroy(); flightGyro = nil end
+	if flightVelocity then flightVelocity:Destroy(); flightVelocity = nil end
+end
+
+local function ClearVehicleState()
+	currentVehicle, lastEnteredVehicle, lastExitedVehicle = nil, nil, nil
+end
+
+local function CleanupCharacter()
+	ResetAutomation()
+	ClearVehicleState()
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then hum.Health = 0 end
+	end
+end
+
+local function GetAttemptArrest()
+	if attemptArrestCache then return attemptArrestCache end
+	for _, v in pairs(getgc()) do
+		if type(v) == "function" and getinfo(v).name == "AttemptArrest" then
+			attemptArrestCache = v
+			return v
+		end
+	end
+	return function() end
+end
+
+local function EquipHandcuffs()
+	for _, item in pairs(client.inventoryitemsystem.getInventoryItemsFor(LocalPlayer)) do
+		if item.obj and item.obj.Name == "Handcuffs" then
+			pcall(function() item:AttemptSetEquipped(true) end)
+			return true
+		end
+	end
+	return false
+end
+
+local function IsInVehicle(char)
+	if not char then return false end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	return char:GetAttribute("InVehicle") or (hum and hum.SeatPart ~= nil)
+end
+
+local function IsInAircraft(char)
+	if not IsInVehicle(char) then return false end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local seat = hum and hum.SeatPart
+	local model = seat and seat:FindFirstAncestorWhichIsA("Model")
+	if not model then return false end
+	local name = string.lower(model.Name)
+	return string.find(name, "heli") or string.find(name, "drone") or string.find(name, "blimp") or string.find(name, "ufo") or string.find(name, "blackhawk")
+end
+
+local function GetNearestVehicle(pos)
+	local nearest, minDist = nil, math.huge
+	for _, v in pairs(Workspace:FindFirstChild("Vehicles") and Workspace.Vehicles:GetChildren() or {}) do
+		if v:IsA("Model") and v.PrimaryPart then
+			local seat = v:FindFirstChildWhichIsA("VehicleSeat", true) or v:FindFirstChild("Seat", true)
+			if seat and not seat.Occupant then
+				local dist = (v.PrimaryPart.Position - pos).Magnitude
+				if dist < minDist then minDist = dist; nearest = v end
+			end
+		end
+	end
+	return nearest
+end
+
+local function IsValidTarget(plr)
+	if plr == LocalPlayer or arrestedBlacklist[plr] or plr.Team and plr.Team.Name ~= "Criminal" then return false end
+	local char = plr.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") or char:GetAttribute("HasHandcuffs") then return false end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum or hum.Health <= 0 then return false end
+	return not IsInAircraft(char)
+end
+
+local function GetNearestTarget(pos)
+	local nearest, minDist = nil, math.huge
+	for _, plr in pairs(Players:GetPlayers()) do
+		if IsValidTarget(plr) then
+			local dist = (plr.Character.HumanoidRootPart.Position - pos).Magnitude
+			if dist < minDist then minDist = dist; nearest = plr end
+		end
+	end
+	return nearest
+end
+
+local function CheckObstacleSafety(origin, targetY)
+	local dir = Vector3.new(0, targetY - origin.Y, 0)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = {LocalPlayer.Character, client.vehicleutils.GetLocalVehicleModel()}
+	return Workspace:Raycast(origin, dir, params) == nil
+end
+
+local function MoveToSafe(targetPos, token, targetChar)
+	if automationToken ~= token then return false end
+	local char = LocalPlayer.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if not root then return false end
+
+	if math.abs(targetPos.Y - root.Position.Y) > 5 then
+		if not CheckObstacleSafety(root.Position, targetPos.Y) then
+			CleanupCharacter()
+			return false
+		end
+	end
+
+	if not flightGyro then
+		flightGyro = Instance.new("BodyGyro", root)
+		flightGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+		flightGyro.D = 500
+		flightGyro.P = 150000
+	end
+	if not flightVelocity then
+		flightVelocity = Instance.new("BodyVelocity", root)
+		flightVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	end
+
+	local speed = (targetPos.Y > root.Position.Y) and Config.AscendSpeed or Config.DescendSpeed
+	if math.abs(targetPos.Y - root.Position.Y) < 5 then speed = Config.CruiseSpeed end
+
+	while automationToken == token and (root.Position - targetPos).Magnitude > 5 do
+		local currentTarget = targetPos
+		if targetChar and targetChar.PrimaryPart then
+			currentTarget = Vector3.new(targetChar.PrimaryPart.Position.X, targetPos.Y, targetChar.PrimaryPart.Position.Z)
+		end
+		local dir = (currentTarget - root.Position).Unit
+		flightVelocity.Velocity = dir * speed
+		flightGyro.CFrame = CFrame.lookAt(root.Position, root.Position + Vector3.new(dir.X, 0, dir.Z))
+		task.wait()
+	end
+	if flightVelocity then flightVelocity.Velocity = Vector3.new(0, 0, 0) end
+	return automationToken == token
+end
+
+local function TriggerPrompt(actionName)
+	for _, prompt in pairs(Workspace:GetDescendants()) do
+		if prompt:IsA("ProximityPrompt") and prompt.ActionText == actionName then
+			local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if root and (prompt.Parent.Position - root.Position).Magnitude <= prompt.MaxActivationDistance then
+				fireproximityprompt(prompt)
+			end
+		end
+	end
+end
+
+local function HandleVehicleEntry(token, vehicle)
+	TriggerPrompt("Enter")
+	task.wait(1)
+	if IsInVehicle(LocalPlayer.Character) then
+		currentVehicle = vehicle
+		lastEnteredVehicle = vehicle
+	end
+end
+
+local function CloseRangeTirePop(target, token)
+	local char = LocalPlayer.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local targetChar = target.Character
+	local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+	if not root or not targetRoot then return end
+
+	pcall(function() sethiddenproperty(root, "PhysicsRepRootPart", targetRoot) end)
+	local targetVeh = targetChar:FindFirstChildOfClass("Humanoid").SeatPart:FindFirstAncestorWhichIsA("Model")
+	local initialPop = targetVeh and targetVeh:GetAttribute("VehicleTiresLastPop")
+	local timeout = tick() + Config.CarMaxRamDuration
+
+	while automationToken == token and tick() < timeout and IsInVehicle(targetChar) do
+		root.CFrame = targetRoot.CFrame * Config.TpOffset
+		local currentPop = targetVeh and targetVeh:GetAttribute("VehicleTiresLastPop")
+		if currentPop ~= initialPop then break end
+		task.wait()
+	end
+	pcall(function() sethiddenproperty(root, "PhysicsRepRootPart", nil) end)
+end
+
+local function SpawnCamaroAndWait(token)
+	local spawnRemote = ReplicatedStorage:FindFirstChild("GarageSpawnVehicle", true)
+	if spawnRemote then spawnRemote:FireServer("Chassis", "Camaro") end
+	local startTick = tick()
+	while automationToken == token and tick() - startTick < 10 do
+		if IsInVehicle(LocalPlayer.Character) then break end
+		local camaro = GetNearestVehicle(LocalPlayer.Character.HumanoidRootPart.Position)
+		if camaro and camaro.Name == "Camaro" then TriggerPrompt("Enter") end
+		task.wait(0.5)
+	end
+end
+
+local function RunAutomationCycle(token)
+	local char = LocalPlayer.Character
+	local root = char:WaitForChild("HumanoidRootPart", 10)
+	if not root then return end
+
+	currentState = State.EscapingBuilding
+	local nearestStation, minDist = nil, math.huge
+	for _, station in ipairs(StationWaypoints) do
+		local dist = (station.Base.Position - root.Position).Magnitude
+		if dist < minDist then minDist = dist; nearestStation = station end
+	end
+	if nearestStation then
+		root.CFrame = nearestStation.Base
+		task.wait(Config.WaypointDelay)
+		for _, wp in ipairs(nearestStation.Path) do
+			if automationToken ~= token then return end
+			root.CFrame = wp
+			task.wait(Config.WaypointDelay)
+		end
+	end
+
+	while automationToken == token do
+		if not IsInVehicle(char) then
+			currentState = State.FindingVehicle
+			local veh = GetNearestVehicle(root.Position)
+			if veh then
+				currentState = State.Ascending
+				if not MoveToSafe(Vector3.new(root.Position.X, root.Position.Y + Config.InitialVehicleAltitude, root.Position.Z), token) then return end
+				currentState = State.PositioningAboveTarget
+				if not MoveToSafe(Vector3.new(veh.PrimaryPart.Position.X, root.Position.Y, veh.PrimaryPart.Position.Z), token) then return end
+				currentState = State.Descending
+				if not MoveToSafe(veh.PrimaryPart.Position, token) then return end
+				currentState = State.EnteringVehicle
+				HandleVehicleEntry(token, veh)
+			else
+				SpawnCamaroAndWait(token)
+			end
+		end
+
+		if IsInVehicle(char) then
+			currentState = State.Ascending
+			if not MoveToSafe(Vector3.new(root.Position.X, root.Position.Y + Config.TargetCruiseAltitude, root.Position.Z), token) then return end
+			
+			currentState = State.SearchingTarget
+			local target = GetNearestTarget(root.Position)
+			if target then
+				currentState = State.PositioningAboveTarget
+				if not MoveToSafe(Vector3.new(target.Character.HumanoidRootPart.Position.X, root.Position.Y, target.Character.HumanoidRootPart.Position.Z), token, target.Character) then return end
+				
+				currentState = State.Descending
+				if not MoveToSafe(target.Character.HumanoidRootPart.Position, token, target.Character) then return end
+				
+				if IsInVehicle(target.Character) then
+					currentState = State.PoppingTire
+					CloseRangeTirePop(target, token)
+				end
+
+				currentState = State.ExitingVehicle
+				char:FindFirstChildOfClass("Humanoid").Jump = true
+				lastExitedVehicle = currentVehicle
+				currentVehicle = nil
+
+				currentState = State.EquippingHandcuffs
+				EquipHandcuffs()
+
+				currentState = State.EjectingTarget
+				while automationToken == token and IsInVehicle(target.Character) do
+					TriggerPrompt("Eject")
+					task.wait(0.5)
+				end
+
+				currentState = State.ArrestingTarget
+				GetAttemptArrest()(target)
+				local arrestTimeout = tick() + 5
+				while automationToken == token and tick() < arrestTimeout do
+					if target.Character:GetAttribute("HasHandcuffs") then
+						arrestedBlacklist[target] = true
+						break
+					end
+					task.wait(0.1)
+				end
+
+				currentState = State.ReturningToVehicle
+				if lastExitedVehicle and lastExitedVehicle.Parent then
+					local dist = (root.Position - lastExitedVehicle.PrimaryPart.Position).Magnitude
+					if dist < Config.VehicleTooFarDistance then
+						MoveToSafe(Vector3.new(root.Position.X, root.Position.Y + Config.ReturnVehicleAltitude, root.Position.Z), token)
+						MoveToSafe(Vector3.new(lastExitedVehicle.PrimaryPart.Position.X, root.Position.Y, lastExitedVehicle.PrimaryPart.Position.Z), token)
+						MoveToSafe(lastExitedVehicle.PrimaryPart.Position, token)
+						HandleVehicleEntry(token, lastExitedVehicle)
+					else
+						currentState = State.SpawningCamaro
+						MoveToSafe(Vector3.new(root.Position.X, root.Position.Y + Config.ReturnVehicleAltitude, root.Position.Z), token)
+						local dropPos = (CFrame.new(root.Position, target.Character.HumanoidRootPart.Position) * CFrame.new(0, 0, Config.CamaroSpawnDistance)).Position
+						MoveToSafe(Vector3.new(dropPos.X, root.Position.Y, dropPos.Z), token)
+						MoveToSafe(dropPos, token)
+						SpawnCamaroAndWait(token)
+					end
+				else
+					SpawnCamaroAndWait(token)
+				end
+			end
+		end
+		task.wait(1)
+	end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	ResetAutomation()
+	local token = automationToken
+	task.spawn(function() RunAutomationCycle(token) end)
+end)
+
+if LocalPlayer.Character then
+	ResetAutomation()
+	task.spawn(function() RunAutomationCycle(automationToken) end)
+end
