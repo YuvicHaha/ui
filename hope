@@ -1,0 +1,437 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+local Config = {
+	WaypointDelay = 0.2,
+	PostPathDelay = 1,
+	VehicleSearchDistance = 100,
+	TargetSearchHeight = 500,
+	ReturnHeight = 50,
+	TargetEngageDistance = 20,
+	TargetLockDistance = 5,
+	TargetTpOffset = CFrame.new(0, 0, -2),
+	TargetApproachSpeed = 100,
+	FallbackDistance = 500,
+	FallbackAwayDistance = 300,
+	EnemySpawnClearance = 200,
+	ObstacleCheckDistance = 50,
+	AscendSpeed = 50,
+	DescendSpeed = 50,
+	RaycastParams = RaycastParams.new()
+}
+Config.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+local Stations = {
+	{Base = Vector3.new(-1173.24, 39.42, -1583.77), Path = {Vector3.new(-1173.24, 39.42, -1583.77), Vector3.new(-1173.24, 39.42, -1563.77)}},
+	{Base = Vector3.new(1786.66, 24.05, -4019.01), Path = {Vector3.new(1786.66, 24.05, -4019.01), Vector3.new(1766.66, 24.05, -4019.01)}},
+	{Base = Vector3.new(-1171.10, 18.80, -1579.22), Path = {Vector3.new(-1171.10, 18.80, -1579.22), Vector3.new(-1171.10, 18.80, -1559.22)}},
+	{Base = Vector3.new(738.20, 44.96, 1120.53), Path = {Vector3.new(738.20, 44.96, 1120.53), Vector3.new(738.20, 44.96, 1140.53)}},
+	{Base = Vector3.new(1801.00, 25.54, -891.02), Path = {Vector3.new(1801.00, 25.54, -891.02), Vector3.new(1781.00, 25.54, -891.02)}},
+	{Base = Vector3.new(1822.10, 25.55, -636.60), Path = {Vector3.new(1822.10, 25.55, -636.60), Vector3.new(1802.10, 25.55, -636.60)}}
+}
+local State = {
+	Phase = 1,
+	Active = false,
+	CurrentVehicle = nil,
+	LastExitedVehicle = nil,
+	TargetPlayer = nil,
+	TargetVehicle = nil,
+	ArrestedBlacklist = {},
+	MoverVel = nil,
+	MoverGyro = nil,
+	Connections = {}
+}
+local attemptArrest
+for _, v in pairs(getgc(true)) do
+	if type(v) == "function" and islclosure(v) then
+		pcall(function()
+			if tostring(getinfo(v).name) == "AttemptArrest" then
+				attemptArrest = v
+			end
+		end)
+		if attemptArrest then break end
+	end
+end
+local function GetInvSys()
+	local success, mod = pcall(function() return require(ReplicatedStorage.Inventory.InventoryItemSystem) end)
+	return success and mod or nil
+end
+local function EquipHandcuffs()
+	local invSys = GetInvSys()
+	if not invSys then return false end
+	for _, item in pairs(invSys.getInventoryItemsFor(LocalPlayer)) do
+		if item.obj and item.obj.Name == "Handcuffs" then
+			pcall(function() item:AttemptSetEquipped(true) end)
+			return true
+		end
+	end
+	return false
+end
+local function ClearMovers()
+	if State.MoverVel then State.MoverVel:Destroy() State.MoverVel = nil end
+	if State.MoverGyro then State.MoverGyro:Destroy() State.MoverGyro = nil end
+end
+local function SetupMovers(root)
+	ClearMovers()
+	State.MoverVel = Instance.new("BodyVelocity")
+	State.MoverVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	State.MoverVel.Velocity = Vector3.zero
+	State.MoverVel.Parent = root
+	State.MoverGyro = Instance.new("BodyGyro")
+	State.MoverGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+	State.MoverGyro.P = 3000
+	State.MoverGyro.D = 500
+	State.MoverGyro.Parent = root
+end
+local function CleanupState()
+	State.Active = false
+	ClearMovers()
+	for _, conn in pairs(State.Connections) do conn:Disconnect() end
+	State.Connections = {}
+	State.CurrentVehicle = nil
+	State.LastExitedVehicle = nil
+	State.TargetPlayer = nil
+	State.TargetVehicle = nil
+end
+local function CheckObstacle(pos, dir)
+	Config.RaycastParams.FilterDescendantsInstances = {LocalPlayer.Character, State.CurrentVehicle}
+	local res = Workspace:Raycast(pos, dir, Config.RaycastParams)
+	return res ~= nil
+end
+local function KillCharacter()
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.Health = 0
+	end
+end
+local function IsInVehicle(char)
+	if not char then return false end
+	local hum = char:FindFirstChild("Humanoid")
+	return char:GetAttribute("InVehicle") == true or (hum and hum.SeatPart ~= nil)
+end
+local function InteractAction(actionName, targetInst)
+	local success, circleAction = pcall(function() return require(ReplicatedStorage.Module.UI).CircleAction end)
+	if success and circleAction and circleAction.Specs then
+		for _, spec in pairs(circleAction.Specs) do
+			if spec.Name == actionName and (not targetInst or spec.Part == targetInst or spec.Part:IsDescendantOf(targetInst)) then
+				if spec.Callback then pcall(spec.Callback, true) end
+			end
+		end
+	end
+end
+local function UnmountVehicle()
+	VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+	task.wait(0.1)
+	VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+end
+local function RunPhase1(root)
+	local closest, dist = nil, math.huge
+	for _, st in ipairs(Stations) do
+		local d = (root.Position - st.Base).Magnitude
+		if d < dist then
+			dist = d
+			closest = st
+		end
+	end
+	if closest then
+		for _, pt in ipairs(closest.Path) do
+			root.CFrame = CFrame.new(pt)
+			task.wait(Config.WaypointDelay)
+		end
+		task.wait(Config.PostPathDelay)
+	end
+	State.Phase = 2
+end
+local function RunPhase2(root)
+	local bestDist, bestVeh = Config.VehicleSearchDistance, nil
+	local vehs = Workspace:FindFirstChild("Vehicles")
+	if vehs then
+		for _, v in pairs(vehs:GetChildren()) do
+			if v.Name == "Camaro" or v.Name == "Jeep" then
+				local seat = v:FindFirstChild("Seat")
+				if seat then
+					-- Safe check: Only verify occupant if the part is actually a Seat or VehicleSeat
+					local isOccupied = false
+					if seat:IsA("VehicleSeat") or seat:IsA("Seat") then
+						isOccupied = (seat.Occupant ~= nil)
+					end
+					
+					if not isOccupied then
+						local d = (root.Position - seat.Position).Magnitude
+						if d < bestDist then
+							bestDist = d
+							bestVeh = v
+						end
+					end
+				end
+			end
+		end
+	end
+	if bestVeh then
+		root.CFrame = bestVeh.PrimaryPart and bestVeh.PrimaryPart.CFrame or bestVeh:GetModelCFrame()
+		InteractAction("EnterDriver", bestVeh)
+		task.wait(0.5)
+		if IsInVehicle(LocalPlayer.Character) then
+			State.CurrentVehicle = bestVeh
+			State.Phase = 3
+		end
+	end
+end
+local function RunPhase3(root)
+	SetupMovers(State.CurrentVehicle.PrimaryPart or root)
+	local targetY = Config.TargetSearchHeight
+	while IsInVehicle(LocalPlayer.Character) and root.Position.Y < targetY do
+		if CheckObstacle(root.Position, Vector3.new(0, Config.ObstacleCheckDistance, 0)) then KillCharacter() return end
+		State.MoverVel.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+		State.MoverGyro.CFrame = CFrame.new(Vector3.zero)
+		task.wait()
+	end
+	State.MoverVel.Velocity = Vector3.zero
+	if IsInVehicle(LocalPlayer.Character) then State.Phase = 4 end
+end
+local function CheckBlacklist()
+	for p, _ in pairs(State.ArrestedBlacklist) do
+		if p and p.Parent and p.Team and p.Team.Name == "Criminal" then
+			State.ArrestedBlacklist[p] = nil
+		end
+	end
+end
+local function RunPhase4()
+	CheckBlacklist()
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Team and p.Team.Name == "Criminal" and not State.ArrestedBlacklist[p] then
+			local char = p.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local isSpecial = false
+				if char:GetAttribute("InVehicle") == true then
+					local v = char.Humanoid.SeatPart and char.Humanoid.SeatPart.Parent or nil
+					if v then
+						local vName = string.lower(v.Name)
+						if string.find(vName, "heli") or string.find(vName, "ufo") or string.find(vName, "blackhawk") or string.find(vName, "drone") or string.find(vName, "blimp") then
+							isSpecial = true
+						end
+					end
+				end
+				if not isSpecial then
+					State.TargetPlayer = p
+					State.Phase = 5
+					return
+				end
+			end
+		end
+	end
+	task.wait(1)
+end
+local function RunPhase5(root)
+	if not State.TargetPlayer or not State.TargetPlayer.Character or not State.TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		State.Phase = 4
+		return
+	end
+	local tRoot = State.TargetPlayer.Character.HumanoidRootPart
+	local tPos = tRoot.Position
+	local cPos = root.Position
+	local hDist = (Vector3.new(tPos.X, 0, tPos.Z) - Vector3.new(cPos.X, 0, cPos.Z)).Magnitude
+	if hDist > Config.TargetEngageDistance then
+		local dir = (Vector3.new(tPos.X, cPos.Y, tPos.Z) - cPos).Unit
+		State.MoverVel.Velocity = dir * Config.TargetApproachSpeed
+		State.MoverGyro.CFrame = CFrame.lookAt(cPos, Vector3.new(tPos.X, cPos.Y, tPos.Z))
+	else
+		if CheckObstacle(root.Position, Vector3.new(0, -Config.ObstacleCheckDistance, 0)) then KillCharacter() return end
+		State.MoverVel.Velocity = Vector3.new(0, -Config.DescendSpeed, 0)
+		if (cPos.Y - tPos.Y) <= Config.TargetEngageDistance then
+			State.MoverVel.Velocity = Vector3.zero
+			State.Phase = 6
+		end
+	end
+	task.wait()
+end
+local function RunPhase6(root)
+	local char = State.TargetPlayer and State.TargetPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then State.Phase = 4 return end
+	local tRoot = char.HumanoidRootPart
+	if char:GetAttribute("InVehicle") == true and char.Humanoid.SeatPart then
+		State.TargetVehicle = char.Humanoid.SeatPart.Parent
+		if State.TargetVehicle then
+			local initPop = State.TargetVehicle:GetAttribute("VehicleTiresLastPop")
+			while char and char:GetAttribute("InVehicle") == true and State.TargetVehicle:GetAttribute("VehicleTiresLastPop") == initPop do
+				pcall(function() sethiddenproperty(root, "PhysicsRepRootPart", tRoot) end)
+				root.CFrame = tRoot.CFrame * Config.TargetTpOffset
+				State.MoverVel.Velocity = Vector3.zero
+				task.wait()
+			end
+		end
+	end
+	State.LastExitedVehicle = State.CurrentVehicle
+	State.Phase = 7
+end
+local function RunPhase7(root)
+	EquipHandcuffs()
+	if IsInVehicle(LocalPlayer.Character) then UnmountVehicle() end
+	task.wait(0.2)
+	local char = State.TargetPlayer and State.TargetPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then State.Phase = 4 return end
+	local tRoot = char.HumanoidRootPart
+	SetupMovers(root)
+	local dist = (root.Position - tRoot.Position).Magnitude
+	if dist > Config.TargetLockDistance then
+		State.MoverVel.Velocity = (tRoot.Position - root.Position).Unit * Config.TargetApproachSpeed
+		State.MoverGyro.CFrame = CFrame.lookAt(root.Position, tRoot.Position)
+	else
+		pcall(function() sethiddenproperty(root, "PhysicsRepRootPart", tRoot) end)
+		root.CFrame = tRoot.CFrame * Config.TargetTpOffset
+		State.MoverVel.Velocity = Vector3.zero
+		if char:GetAttribute("InVehicle") == true then
+			InteractAction("Eject", State.TargetVehicle)
+		else
+			State.Phase = 8
+		end
+	end
+	task.wait()
+end
+local function RunPhase8()
+	local char = State.TargetPlayer and State.TargetPlayer.Character
+	if not char then State.Phase = 4 return end
+	if char:GetAttribute("HasHandcuffs") == true then
+		print("[HANDCUFFED]", State.TargetPlayer.Name)
+		State.ArrestedBlacklist[State.TargetPlayer] = true
+		State.Phase = 9
+		return
+	end
+	EquipHandcuffs()
+	if attemptArrest then attemptArrest(State.TargetPlayer) end
+	task.wait(0.1)
+end
+local function RunPhase9(root)
+	SetupMovers(root)
+	local targetY = root.Position.Y + Config.ReturnHeight
+	while root.Position.Y < targetY do
+		if CheckObstacle(root.Position, Vector3.new(0, Config.ObstacleCheckDistance, 0)) then KillCharacter() return end
+		State.MoverVel.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+		task.wait()
+	end
+	if State.LastExitedVehicle and State.LastExitedVehicle.Parent then
+		local vRoot = State.LastExitedVehicle.PrimaryPart or State.LastExitedVehicle:FindFirstChildWhichIsA("BasePart")
+		if vRoot and (root.Position - vRoot.Position).Magnitude < Config.FallbackDistance then
+			local tPos = vRoot.Position
+			local cPos = root.Position
+			local hDist = (Vector3.new(tPos.X, 0, tPos.Z) - Vector3.new(cPos.X, 0, cPos.Z)).Magnitude
+			if hDist > 10 then
+				State.MoverVel.Velocity = (Vector3.new(tPos.X, cPos.Y, tPos.Z) - cPos).Unit * Config.TargetApproachSpeed
+			else
+				State.MoverVel.Velocity = Vector3.new(0, -Config.DescendSpeed, 0)
+				if (cPos.Y - tPos.Y) < 10 then
+					InteractAction("EnterDriver", State.LastExitedVehicle)
+					task.wait(0.5)
+					if IsInVehicle(LocalPlayer.Character) then
+						State.CurrentVehicle = State.LastExitedVehicle
+						State.Phase = 11
+						return
+					end
+				end
+			end
+			task.wait()
+			return
+		end
+	end
+	State.Phase = 10
+end
+local function RunPhase10(root)
+	SetupMovers(root)
+	local safeY = root.Position.Y + 50
+	while root.Position.Y < safeY do
+		State.MoverVel.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+		task.wait()
+	end
+	local moveDir = Vector3.new(1, 0, 0)
+	if State.TargetPlayer and State.TargetPlayer.Character and State.TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		moveDir = (root.Position - State.TargetPlayer.Character.HumanoidRootPart.Position).Unit
+		moveDir = Vector3.new(moveDir.X, 0, moveDir.Z).Unit
+	end
+	local targetPos = root.Position + (moveDir * Config.FallbackAwayDistance)
+	while (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(targetPos.X, 0, targetPos.Z)).Magnitude > 10 do
+		State.MoverVel.Velocity = moveDir * Config.TargetApproachSpeed
+		task.wait()
+	end
+	local enemyClose = false
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Team and p.Team.Name == "Criminal" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			if (p.Character.HumanoidRootPart.Position - root.Position).Magnitude < Config.EnemySpawnClearance then
+				enemyClose = true
+				break
+			end
+		end
+	end
+	if enemyClose then return end
+	while true do
+		if CheckObstacle(root.Position, Vector3.new(0, -Config.ObstacleCheckDistance, 0)) then break end
+		State.MoverVel.Velocity = Vector3.new(0, -Config.DescendSpeed, 0)
+		task.wait()
+		local r = Workspace:Raycast(root.Position, Vector3.new(0, -10, 0), Config.RaycastParams)
+		if r then break end
+	end
+	State.MoverVel.Velocity = Vector3.zero
+	local spawnRemote = ReplicatedStorage:FindFirstChild("GarageSpawnVehicle", true)
+	if spawnRemote then
+		spawnRemote:FireServer("Chassis", "Camaro")
+		task.wait(1.5)
+		if IsInVehicle(LocalPlayer.Character) then
+			local hum = LocalPlayer.Character:FindFirstChild("Humanoid")
+			State.CurrentVehicle = hum and hum.SeatPart and hum.SeatPart.Parent
+			State.Phase = 11
+		end
+	end
+end
+local function RunPhase11(root)
+	if not IsInVehicle(LocalPlayer.Character) then State.Phase = 10 return end
+	SetupMovers(State.CurrentVehicle.PrimaryPart or root)
+	local targetY = Config.TargetSearchHeight
+	while IsInVehicle(LocalPlayer.Character) and root.Position.Y < targetY do
+		if CheckObstacle(root.Position, Vector3.new(0, Config.ObstacleCheckDistance, 0)) then KillCharacter() return end
+		State.MoverVel.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+		State.MoverGyro.CFrame = CFrame.new(Vector3.zero)
+		task.wait()
+	end
+	State.MoverVel.Velocity = Vector3.zero
+	State.Phase = 4
+end
+local function AutomationLoop()
+	while State.Active do
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+			local root = char.HumanoidRootPart
+			if State.Phase == 1 then RunPhase1(root)
+			elseif State.Phase == 2 then RunPhase2(root)
+			elseif State.Phase == 3 then RunPhase3(root)
+			elseif State.Phase == 4 then RunPhase4()
+			elseif State.Phase == 5 then RunPhase5(root)
+			elseif State.Phase == 6 then RunPhase6(root)
+			elseif State.Phase == 7 then RunPhase7(root)
+			elseif State.Phase == 8 then RunPhase8()
+			elseif State.Phase == 9 then RunPhase9(root)
+			elseif State.Phase == 10 then RunPhase10(root)
+			elseif State.Phase == 11 then RunPhase11(root)
+			end
+		end
+		task.wait()
+	end
+end
+local function StartAutomation()
+	CleanupState()
+	State.Phase = 1
+	State.Active = true
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	table.insert(State.Connections, char:WaitForChild("Humanoid").Died:Connect(function()
+		CleanupState()
+	end))
+	task.spawn(AutomationLoop)
+end
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1)
+	StartAutomation()
+end)
+LocalPlayer.CharacterRemoving:Connect(function()
+	CleanupState()
+end)
+if LocalPlayer.Character then StartAutomation() end
