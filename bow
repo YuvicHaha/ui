@@ -1,0 +1,1317 @@
+local __bootstrapKey="__DitoAko_AutoArrestBootstrapConnections_v2"
+local __oldBootstrap=getgenv()[__bootstrapKey]
+if type(__oldBootstrap)=="table" then
+    for _,__c in ipairs(__oldBootstrap) do pcall(function() __c:Disconnect() end) end
+end
+local __bootstrapConnections={}
+getgenv()[__bootstrapKey]=__bootstrapConnections
+local function __trackBootstrap(c)
+    if c then __bootstrapConnections[#__bootstrapConnections+1]=c end
+    return c
+end
+
+local Config={
+    VehicleEnterRadius=15,
+    VehicleEnterDelay=0.2,
+    CamaroSpawnWait=1.0,
+    MaxCarReturnDistance=1500,
+    CarFlyHeight=500,
+    CarAscendSpeed=170,
+    CarCruiseSpeed=500,
+    CarCruiseDistanceThreshold=100,
+    CarDescendSpeed=350,
+    CarDescendDistanceThreshold=20,
+    CarMaxRamDuration=0.1,
+    CarLoopTpDuration=0.1,
+    PlayerFlySpeed=120,
+    PlayerReturnFlyHeight=100,
+    PlayerFlyStopDistance=10,
+    UndergroundYThreshold=15,
+    CeilingCheckRayDistance=200,
+    ArrestTpDistance=10,
+    TpOffset=CFrame.new(0,0,5),
+    WaypointDelay=0.2,
+    ServerHopMinPlayers=25,
+    ServerHopMaxPlayers=28,
+    ServerHopCriminalLimit=2,
+    AntiFullServerPlayers=29,
+}
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
+local UserInputService=game:GetService("UserInputService")
+local VirtualInputManager=game:GetService("VirtualInputManager")
+local TeleportService=game:GetService("TeleportService")
+local HttpService=game:GetService("HttpService")
+local LocalPlayer=Players.LocalPlayer
+loadstring(game:HttpGet("https://raw.githubusercontent.com/YuvicHaha/ui3/refs/heads/main/jail"))()
+getgenv().AutoArrestActive=false
+getgenv().LagbackCount=0
+local currentTarget=nil
+local targetRoot=nil
+local renderConnection=nil
+local arrestedBlacklist={}
+local ExecuteAutoArrest=nil
+local ServerHopActive=false
+local function setupPlayerTracking(plr)
+    __trackBootstrap(plr:GetPropertyChangedSignal("Team"):Connect(function()
+        if plr.Team and plr.Team.Name~="Criminal" then
+            arrestedBlacklist[plr]=nil
+        end
+    end))
+end
+for _,plr in pairs(Players:GetPlayers()) do
+    if plr~=LocalPlayer then
+        setupPlayerTracking(plr)
+    end
+end
+__trackBootstrap(Players.PlayerAdded:Connect(setupPlayerTracking))
+__trackBootstrap(Players.PlayerRemoving:Connect(function(plr)
+    arrestedBlacklist[plr]=nil
+end))
+local function GetRequest()
+    if request then
+        return request
+    end
+    if http_request then
+        return http_request
+    end
+    if syn and syn.request then
+        return syn.request
+    end
+    return nil
+end
+local function GetCriminalCount()
+    local count=0
+    for _,plr in pairs(Players:GetPlayers()) do
+        if plr.Team and plr.Team.Name=="Criminal" then
+            count=count+1
+        end
+    end
+    return count
+end
+local function GetServerList()
+    local req=GetRequest()
+    if not req then
+        warn("[SERVER HOP] No HTTP request function available.")
+        return nil
+    end
+    local cursor=""
+    local servers={}
+    for _=1,3 do
+        local url="https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+        if cursor~="" then
+            url=url.."&cursor="..HttpService:UrlEncode(cursor)
+        end
+        local ok,res=pcall(function()
+            return req({
+                Url=url,
+                Method="GET",
+                Headers={
+                    ["Content-Type"]="application/json"
+                }
+            })
+        end)
+        if not ok or not res or not res.Body then
+            warn("[SERVER HOP] Failed to get server list.")
+            return nil
+        end
+        local decodeOk,data=pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        if not decodeOk or not data or not data.data then
+            warn("[SERVER HOP] Invalid server response.")
+            return nil
+        end
+        for _,server in pairs(data.data) do
+            if server.id and server.id~=game.JobId and server.playing and server.maxPlayers then
+                table.insert(servers,server)
+            end
+        end
+        cursor=data.nextPageCursor
+        if not cursor or cursor=="" then
+            break
+        end
+    end
+    return servers
+end
+local function ServerHop(reason)
+    if ServerHopActive then
+        return
+    end
+    ServerHopActive=true
+    getgenv().AutoArrestActive=false
+    print("[SERVER HOP]",reason)
+    if renderConnection then
+        renderConnection:Disconnect()
+        renderConnection=nil
+    end
+    local servers=GetServerList()
+    if servers then
+        local target=nil
+        for _,server in pairs(servers) do
+            if server.playing>=Config.ServerHopMinPlayers and server.playing<=Config.ServerHopMaxPlayers and server.playing<server.maxPlayers then
+                target=server
+                break
+            end
+        end
+        if target then
+            print("[SERVER HOP] Joining server:",target.playing.."/"..target.maxPlayers)
+            local options=Instance.new("TeleportOptions")
+            options.ServerInstanceId=target.id
+            local ok,err=pcall(function()
+                TeleportService:TeleportAsync(game.PlaceId,{LocalPlayer},options)
+            end)
+            if ok then
+                return
+            end
+            warn("[SERVER HOP] Teleport failed:",err)
+        end
+    end
+    ServerHopActive=false
+    print("[SERVER HOP] No suitable server found, using normal teleport.")
+    pcall(function()
+        TeleportService:Teleport(game.PlaceId,LocalPlayer)
+    end)
+end
+local function CheckServerHop()
+    local playerCount=#Players:GetPlayers()
+    local criminalCount=GetCriminalCount()
+    print("[SERVER CHECK] Players:",playerCount,"Criminals:",criminalCount)
+    if playerCount>=Config.AntiFullServerPlayers then
+        ServerHop("ANTI-FULL SERVER")
+        return true
+    end
+    if playerCount>=Config.ServerHopMinPlayers and playerCount<=Config.ServerHopMaxPlayers and criminalCount<Config.ServerHopCriminalLimit then
+        ServerHop("TOO FEW CRIMINALS")
+        return true
+    end
+    return false
+end
+__trackBootstrap(Players.PlayerRemoving:Connect(function()
+    task.defer(function()
+        if getgenv().AutoArrestActive and not ServerHopActive then
+            CheckServerHop()
+        end
+    end)
+end))
+__trackBootstrap(Players.PlayerAdded:Connect(function()
+    task.defer(function()
+        if getgenv().AutoArrestActive and not ServerHopActive then
+            CheckServerHop()
+        end
+    end)
+end))
+if not LPH_OBFUSCATED then
+    LPH_JIT_MAX=function(...) return(...) end
+    LPH_NO_VIRTUALIZE=function(...) return(...) end
+    LRM_IsUserPremium=true
+    script_key="a"
+end
+local Modules={
+    TagUtils=require(ReplicatedStorage.Tag.TagUtils)
+}
+local OverwriteCnt=0
+local ExitFunc=nil
+if LPH_NO_VIRTUALIZE then
+    LPH_NO_VIRTUALIZE(function()
+        for i,v in pairs(getgc(true)) do
+            if typeof(v)=="function" then
+                if debug.info(v,"n"):match("CheatCheck") then
+                    hookfunction(v,function() end)
+                end
+            end
+            if typeof(v)=="function" and getfenv(v).script==LocalPlayer.PlayerScripts:FindFirstChild("LocalScript") then
+                local con=getconstants(v)
+                if table.find(con,"LastVehicleExit") and table.find(con,"tick") then
+                    ExitFunc=v
+                end
+            end
+        end
+    end)()
+    LPH_NO_VIRTUALIZE(function()
+        for i,v in pairs(workspace:GetChildren()) do
+            if v.Name=="Bench" then
+                v:Destroy()
+            end
+        end
+    end)()
+    local TagUtils=require(ReplicatedStorage:FindFirstChild("TagUtils",true))
+    if TagUtils then
+        TagUtils.isPointInTag=LPH_NO_VIRTUALIZE(function(_,Tag)
+            if Tag=="NoFallDamage" or Tag=="NoRagdoll" or Tag=="NoParachute" then
+                return true
+            end
+        end)
+    end
+end
+local vehicleUtils=require(ReplicatedStorage:WaitForChild("Vehicle"):WaitForChild("VehicleUtils"))
+local controllerKey="__DitoAko_AutoArrestController_v2"
+local oldController=getgenv()[controllerKey]
+if oldController and type(oldController.Stop)=="function" then
+    pcall(oldController.Stop)
+end
+
+local Controller={}
+getgenv()[controllerKey]=Controller
+
+local automationGeneration=0
+local automationEnabled=false
+local resetInProgress=false
+local phase="WAITING_FOR_RESPAWN"
+local phase1Active=false
+local phase1Complete=false
+local phase1FinalPosition=nil
+local phase1Running=false
+local selectedVehicle=nil
+local targetVehicle=nil
+local lastCarExited=nil
+local currentTarget=nil
+local targetRoot=nil
+local movementOwner=nil
+local movementObjects={}
+local sessionConnections={}
+local permanentConnections={}
+local activeTasks={}
+local antiStuckState=nil
+local serverHopConnectionGuard=false
+
+Config.Phase1VehicleSearchRadius=200
+Config.Phase1FinalWait=3
+Config.AntiStuckTimeout=10
+Config.AntiStuckMinMove=5
+Config.MaxCarReturnDistance=math.max(Config.MaxCarReturnDistance or 1500,100)
+
+getgenv().AutoArrestActive=false
+getgenv().LagbackCount=0
+
+local function disconnectList(list)
+    for i,c in pairs(list) do
+        if c then pcall(function() c:Disconnect() end) end
+        list[i]=nil
+    end
+end
+
+local function destroyMovementObjects()
+    for i,obj in pairs(movementObjects) do
+        if obj then pcall(function() obj:Destroy() end) end
+        movementObjects[i]=nil
+    end
+    local char=LocalPlayer.Character
+    local root=char and char:FindFirstChild("HumanoidRootPart")
+    if root then
+        for _,name in ipairs({"ExecFlyAttachment","ExecFlyVelocity","AutomationBodyVelocity","AutomationBodyGyro","AutomationVectorForce","AutomationAlignPosition","AutomationAlignOrientation"}) do
+            local obj=root:FindFirstChild(name)
+            if obj then pcall(function() obj:Destroy() end) end
+        end
+        pcall(function()
+            root.AssemblyLinearVelocity=Vector3.zero
+            root.AssemblyAngularVelocity=Vector3.zero
+        end)
+    end
+end
+
+local function trackMovement(obj)
+    if obj then movementObjects[#movementObjects+1]=obj end
+    return obj
+end
+
+local function StopAllAutomation()
+    automationEnabled=false
+    getgenv().AutoArrestActive=false
+    phase="RESETTING"
+    phase1Active=false
+    phase1Complete=false
+    phase1Running=false
+    movementOwner=nil
+    antiStuckState=nil
+    currentTarget=nil
+    targetRoot=nil
+    targetVehicle=nil
+    selectedVehicle=nil
+    disconnectList(sessionConnections)
+    if renderConnection then pcall(function() renderConnection:Disconnect() end); renderConnection=nil end
+    destroyMovementObjects()
+end
+
+function Controller.Stop()
+    automationGeneration=automationGeneration+1
+    StopAllAutomation()
+    disconnectList(permanentConnections)
+end
+
+local function invalidateGeneration()
+    automationGeneration=automationGeneration+1
+    disconnectList(sessionConnections)
+    if renderConnection then pcall(function() renderConnection:Disconnect() end); renderConnection=nil end
+    destroyMovementObjects()
+    movementOwner=nil
+    antiStuckState=nil
+    currentTarget=nil
+    targetRoot=nil
+    targetVehicle=nil
+    selectedVehicle=nil
+    phase1Active=false
+    phase1Complete=false
+    phase1Running=false
+end
+
+local function newGeneration()
+    automationGeneration=automationGeneration+1
+    local g=automationGeneration
+    automationEnabled=true
+    getgenv().AutoArrestActive=true
+    getgenv().LagbackCount=0
+    phase1Active=false
+    phase1Complete=false
+    phase1Running=false
+    phase1FinalPosition=nil
+    selectedVehicle=nil
+    targetVehicle=nil
+    currentTarget=nil
+    targetRoot=nil
+    movementOwner=nil
+    antiStuckState=nil
+    phase="PHASE_1"
+    return g
+end
+
+local function validGeneration(g)
+    return g==automationGeneration and automationEnabled and getgenv().AutoArrestActive and not resetInProgress
+end
+
+local function getCharacter()
+    local char=LocalPlayer.Character
+    if not char or not char.Parent then return nil,nil,nil end
+    local hum=char:FindFirstChildOfClass("Humanoid")
+    local root=char:FindFirstChild("HumanoidRootPart")
+    if not hum or not root or hum.Health<=0 then return nil,nil,nil end
+    return char,hum,root
+end
+
+local function EnterVehicleAsDriver(carModel)
+    local uiModule=ReplicatedStorage:FindFirstChild("Module",true) and require(ReplicatedStorage.Module:FindFirstChild("UI",true) or ReplicatedStorage.Module)
+    if not uiModule or not uiModule.CircleAction or not uiModule.CircleAction.Specs then
+        return false
+    end
+    local driverSeat=carModel and (carModel:FindFirstChild("Seat") or carModel:FindFirstChild("VehicleSeat"))
+    if driverSeat then
+        for _,spec in pairs(uiModule.CircleAction.Specs) do
+            if spec.Part==driverSeat then
+                pcall(function()
+                    spec:Callback(true)
+                end)
+                return true
+            end
+        end
+    end
+    for _,spec in pairs(uiModule.CircleAction.Specs) do
+        if spec.Part and carModel and spec.Part:IsDescendantOf(carModel) then
+            local text=(spec.Text or ""):lower()
+            if text:find("driver") or text:find("drive") then
+                pcall(function()
+                    spec:Callback(true)
+                end)
+                return true
+            end
+        end
+    end
+    for _,spec in pairs(uiModule.CircleAction.Specs) do
+        if spec.Part and carModel and spec.Part:IsDescendantOf(carModel) then
+            local text=(spec.Text or ""):lower()
+            local partName=spec.Part.Name:lower()
+            if not text:find("passenger") and not text:find("eject") and not partName:find("passenger") then
+                pcall(function()
+                    spec:Callback(true)
+                end)
+                return true
+            end
+        end
+    end
+    return false
+end
+local function WaitForSeated(char,humanoid,timeout)
+    local start=tick()
+    while tick()-start<(timeout or 2.0) do
+        if char:GetAttribute("InVehicle") or humanoid.SeatPart~=nil then
+            return true
+        end
+        task.wait(0.05)
+    end
+    return false
+end
+
+local function getVehicleSeat(car)
+    if not car or not car.Parent then return nil end
+    local seat=car:FindFirstChild("Seat") or car:FindFirstChild("VehicleSeat")
+    if seat and seat:IsA("BasePart") then return seat end
+    return car:FindFirstChildWhichIsA("VehicleSeat",true) or car:FindFirstChildWhichIsA("Seat",true)
+end
+
+local function vehicleIsOccupiedByOther(car,humanoid)
+    local seat=getVehicleSeat(car)
+    if not seat then return true end
+    if seat.Occupant and seat.Occupant~=humanoid then return true end
+    local driver=car:FindFirstChild("Driver",true)
+    if driver and driver:IsA("ObjectValue") and driver.Value and driver.Value~=LocalPlayer then return true end
+    return false
+end
+
+local function vehicleIsValid(car,humanoid,allowOwnOccupant)
+    if not car or not car.Parent or not car:IsDescendantOf(workspace) then return false end
+    local seat=getVehicleSeat(car)
+    if not seat or not seat.Parent then return false end
+    if not allowOwnOccupant and vehicleIsOccupiedByOther(car,humanoid) then return false end
+    return true
+end
+
+local function saveExitedVehicle(car)
+    if car and car.Parent and car:IsDescendantOf(workspace) then
+        lastCarExited=car
+    end
+end
+
+local function playerIsInVehicle(char,humanoid)
+    return (char and char:GetAttribute("InVehicle")==true) or (humanoid and humanoid.SeatPart~=nil)
+end
+
+local function IsObstacleAboveSession(root,distance,vehicle,g)
+    if not validGeneration(g) or not root or not root.Parent then return true end
+    local params=RaycastParams.new()
+    params.FilterType=Enum.RaycastFilterType.Exclude
+    local ignore={root.Parent}
+    if vehicle and vehicle.Parent then ignore[#ignore+1]=vehicle end
+    params.FilterDescendantsInstances=ignore
+    params.IgnoreWater=true
+    local hit=workspace:Raycast(root.Position,Vector3.new(0,distance or Config.CeilingCheckRayDistance,0),params)
+    return hit~=nil and hit.Instance and hit.Instance.CanCollide==true
+end
+
+local function beginMovement(g,owner)
+    if not validGeneration(g) then return false end
+    if movementOwner and movementOwner~=owner then return false end
+    movementOwner=owner
+    return true
+end
+
+local function endMovement(owner)
+    if movementOwner==owner then
+        movementOwner=nil
+        destroyMovementObjects()
+    end
+end
+
+local function requestReset(reason)
+    if resetInProgress then return end
+    resetInProgress=true
+    invalidateGeneration()
+    StopAllAutomation()
+    print("[AUTOMATION RESET]",reason or "unspecified")
+    task.spawn(function()
+        pcall(function()
+            local char=LocalPlayer.Character
+            local hum=char and char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health>0 then
+                LocalPlayer:LoadCharacter()
+            end
+        end)
+    end)
+end
+
+local function waitForCharacter(g,timeout)
+    local deadline=tick()+(timeout or 30)
+    while tick()<deadline do
+        if g and g~=automationGeneration then return nil,nil,nil end
+        local char,hum,root=getCharacter()
+        if char and hum and root then return char,hum,root end
+        task.wait(0.05)
+    end
+    return nil,nil,nil
+end
+
+local function waitExactRespawnSecond()
+    task.wait(1)
+end
+
+local function waitProximity(g,root,pos,radius,timeout,owner)
+    local start=tick()
+    while validGeneration(g) and root and root.Parent and tick()-start<(timeout or 10) do
+        if phase~="PHASE_1" and owner=="PHASE_1" then return false end
+        if (root.Position-pos).Magnitude<=radius then return true end
+        task.wait()
+    end
+    return false
+end
+
+local function antiStuckBegin(g,owner,root)
+    if not validGeneration(g) then return end
+    antiStuckState={generation=g,owner=owner,lastPosition=root.Position,lastProgress=tick()}
+end
+
+local function antiStuckCheck(g,owner,root)
+    local a=antiStuckState
+    if not a or a.generation~=g or a.owner~=owner then return false end
+    if not validGeneration(g) or phase=="PHASE_1_FINAL_WAIT" or phase=="VEHICLE_ENTRY" or phase=="WAITING_FOR_RESPAWN" then return false end
+    local d=(root.Position-a.lastPosition).Magnitude
+    if d>=Config.AntiStuckMinMove then
+        a.lastPosition=root.Position
+        a.lastProgress=tick()
+        return false
+    end
+    if tick()-a.lastProgress>=Config.AntiStuckTimeout then
+        requestReset("ANTI-STUCK")
+        return true
+    end
+    return false
+end
+
+local function sessionWait(g,seconds,owner)
+    local deadline=tick()+seconds
+    while tick()<deadline do
+        if not validGeneration(g) or (owner and movementOwner and movementOwner~=owner) then return false end
+        task.wait(0.05)
+    end
+    return validGeneration(g)
+end
+
+local function FlyToSession(g,root,targetPos,stopDist,speed,owner,vehicleForRay)
+    if not beginMovement(g,owner) then return false end
+    local attachment=trackMovement(Instance.new("Attachment"))
+    attachment.Name="AutomationFlyAttachment"
+    attachment.Parent=root
+    local lv=trackMovement(Instance.new("LinearVelocity"))
+    lv.Name="AutomationFlyVelocity"
+    lv.Attachment0=attachment
+    lv.RelativeTo=Enum.ActuatorRelativeTo.World
+    lv.MaxForce=math.huge
+    lv.VectorVelocity=Vector3.zero
+    lv.Parent=root
+    antiStuckBegin(g,owner,root)
+    while validGeneration(g) and movementOwner==owner and root.Parent do
+        if antiStuckCheck(g,owner,root) then return false end
+        if (root.Position-targetPos).Magnitude<=(stopDist or 10) then
+            lv.VectorVelocity=Vector3.zero
+            endMovement(owner)
+            return true
+        end
+        lv.VectorVelocity=(targetPos-root.Position).Unit*(speed or Config.PlayerFlySpeed)
+        task.wait()
+    end
+    endMovement(owner)
+    return false
+end
+
+local function approachVehicle(g,car,reason)
+    local char,hum,root=getCharacter()
+    if not validGeneration(g) or not char or not hum or not root then return false end
+    if not vehicleIsValid(car,hum,false) then return false end
+    selectedVehicle=car
+    phase="VEHICLE_APPROACH"
+    local seat=getVehicleSeat(car)
+    if not seat then return false end
+    if IsObstacleAboveSession(root,math.max(Config.CarFlyHeight,50),car,g) then
+        requestReset("VEHICLE OVERHEAD BLOCKED")
+        return false
+    end
+    if not beginMovement(g,"VEHICLE_APPROACH") then return false end
+    local owner="VEHICLE_APPROACH"
+    local targetHeight=seat.Position.Y+Config.CarFlyHeight
+    local ascentTarget=Vector3.new(root.Position.X,targetHeight,root.Position.Z)
+    local attachment=trackMovement(Instance.new("Attachment")); attachment.Name="AutomationFlyAttachment"; attachment.Parent=root
+    local lv=trackMovement(Instance.new("LinearVelocity")); lv.Name="AutomationFlyVelocity"; lv.Attachment0=attachment; lv.RelativeTo=Enum.ActuatorRelativeTo.World; lv.MaxForce=math.huge; lv.Parent=root
+    antiStuckBegin(g,owner,root)
+    local lastY=root.Position.Y
+    local lastProgress=tick()
+    while validGeneration(g) and movementOwner==owner and root.Parent and root.Position.Y<targetHeight-8 do
+        if not vehicleIsValid(car,hum,false) then endMovement(owner); return false end
+        if vehicleIsOccupiedByOther(car,hum) then endMovement(owner); return false end
+        local remaining=targetHeight-root.Position.Y
+        if IsObstacleAboveSession(root,math.min(math.max(remaining+20,30),Config.CeilingCheckRayDistance),car,g) then
+            endMovement(owner)
+            requestReset("VEHICLE ASCENT BLOCKED")
+            return false
+        end
+        local before=root.Position.Y
+        local dir=(ascentTarget-root.Position)
+        lv.VectorVelocity=dir.Magnitude>1 and dir.Unit*Config.CarAscendSpeed or Vector3.zero
+        task.wait(0.08)
+        if root.Position.Y-before>=0.5 then lastY=root.Position.Y; lastProgress=tick() end
+        if tick()-lastProgress>=2.0 then
+            endMovement(owner)
+            requestReset("VEHICLE ASCENT STALLED")
+            return false
+        end
+    end
+    if not validGeneration(g) then endMovement(owner); return false end
+    lv.VectorVelocity=Vector3.zero
+    if not FlyToSession(g,root,Vector3.new(seat.Position.X,targetHeight,seat.Position.Z),12,Config.CarCruiseSpeed,owner,car) then
+        return false
+    end
+    phase="VEHICLE_ENTRY"
+    if not vehicleIsValid(car,hum,false) or vehicleIsOccupiedByOther(car,hum) then return false end
+    local seatPos=seat.Position+Vector3.new(0,3,0)
+    if not FlyToSession(g,root,seatPos,Config.VehicleEnterRadius,Config.CarDescendSpeed,owner,car) then return false end
+    if not validGeneration(g) or not vehicleIsValid(car,hum,false) or vehicleIsOccupiedByOther(car,hum) then return false end
+    local entered=EnterVehicleAsDriver(car)
+    if entered then
+        task.wait(Config.VehicleEnterDelay)
+    end
+    local seated=WaitForSeated(char,hum,1.5)
+    endMovement(owner)
+    if seated and playerIsInVehicle(char,hum) then
+        phase="TARGET_FOLLOW"
+        selectedVehicle=car
+        return true
+    end
+    return false
+end
+
+local function isLastCarValid(g,car,hum)
+    return validGeneration(g) and vehicleIsValid(car,hum,false) and not vehicleIsOccupiedByOther(car,hum)
+end
+
+local function returnToLastCar(g)
+    local char,hum,root=getCharacter()
+    local car=lastCarExited
+    if not validGeneration(g) or not char or not hum or not root or not car then return false end
+    if not isLastCarValid(g,car,hum) then return false end
+    local seat=getVehicleSeat(car)
+    if not seat then return false end
+    phase="VEHICLE_RETURN"
+    if (root.Position-seat.Position).Magnitude<=100 then
+        return approachVehicle(g,car,"LAST_EXITED")
+    end
+    if IsObstacleAboveSession(root,Config.PlayerReturnFlyHeight,car,g) then
+        requestReset("LAST CAR RETURN BLOCKED")
+        return false
+    end
+    if root.Position.Y<seat.Position.Y+Config.PlayerReturnFlyHeight-5 then
+        if not FlyToSession(g,root,Vector3.new(root.Position.X,seat.Position.Y+Config.PlayerReturnFlyHeight,root.Position.Z),10,Config.PlayerFlySpeed,"VEHICLE_RETURN",car) then return false end
+    end
+    if not validGeneration(g) or not isLastCarValid(g,car,hum) then return false end
+    if not FlyToSession(g,root,Vector3.new(seat.Position.X,seat.Position.Y+Config.PlayerReturnFlyHeight,seat.Position.Z),10,Config.PlayerFlySpeed,"VEHICLE_RETURN",car) then return false end
+    return approachVehicle(g,car,"LAST_EXITED")
+end
+
+local function findExpectedVehicle(root,hum)
+    if vehicleIsValid(lastCarExited,hum,false) and (getVehicleSeat(lastCarExited).Position-root.Position).Magnitude<=Config.Phase1VehicleSearchRadius then
+        return lastCarExited
+    end
+    local remembered=getgenv().GetMyCar and getgenv().GetMyCar()
+    if vehicleIsValid(remembered,hum,false) and (getVehicleSeat(remembered).Position-root.Position).Magnitude<=Config.Phase1VehicleSearchRadius then
+        return remembered
+    end
+    return nil
+end
+
+local function findNearestAvailableVehicle(root,hum)
+    local folder=workspace:FindFirstChild("Vehicles")
+    if not folder then return nil end
+    local best,bestDist=nil,math.huge
+    for _,v in ipairs(folder:GetChildren()) do
+        if vehicleIsValid(v,hum,false) and not vehicleIsOccupiedByOther(v,hum) then
+            local seat=getVehicleSeat(v)
+            if seat then
+                local d=(seat.Position-root.Position).Magnitude
+                if d<=Config.Phase1VehicleSearchRadius and d<bestDist then
+                    best,bestDist=v,d
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function selectAndEnterPhase1Vehicle(g)
+    if not validGeneration(g) or not phase1Complete or phase=="PHASE_1_FINAL_WAIT" then return false end
+    local char,hum,root=getCharacter()
+    if not char or not hum or not root then return false end
+    phase="VEHICLE_SELECTION"
+    local car=findExpectedVehicle(root,hum)
+    if not car then car=findNearestAvailableVehicle(root,hum) end
+    if not car then
+        requestReset("NO VEHICLE WITHIN 200 STUDS")
+        return false
+    end
+    selectedVehicle=car
+    if not vehicleIsValid(car,hum,false) or vehicleIsOccupiedByOther(car,hum) then return false end
+    if not approachVehicle(g,car,"PHASE_1") then
+        if validGeneration(g) then requestReset("VEHICLE ENTRY FAILED") end
+        return false
+    end
+    return true
+end
+
+local function monitorDismount(g)
+    local previousVehicle=selectedVehicle
+    local char,hum,root=getCharacter()
+    if not char or not hum then return end
+    local wasIn=true
+    while validGeneration(g) do
+        char,hum,root=getCharacter()
+        if not char or not hum or not root then return end
+        local nowIn=playerIsInVehicle(char,hum)
+        if wasIn and not nowIn and previousVehicle and previousVehicle.Parent then
+            saveExitedVehicle(previousVehicle)
+        end
+        if not nowIn and lastCarExited and getVehicleSeat(lastCarExited) then
+            local d=(root.Position-getVehicleSeat(lastCarExited).Position).Magnitude
+            if d>100 and phase=="TARGET_FOLLOW" then
+                returnToLastCar(g)
+            end
+        end
+        if not nowIn then
+            wasIn=false
+        else
+            wasIn=true
+            previousVehicle=hum.SeatPart and hum.SeatPart.Parent or selectedVehicle
+        end
+        task.wait(0.5)
+    end
+end
+
+local function targetFollow(g)
+    local char,hum,root=getCharacter()
+    if not validGeneration(g) or not char or not hum or not root then return end
+    if not playerIsInVehicle(char,hum) then
+        phase="VEHICLE_RETURN"
+        if lastCarExited and returnToLastCar(g) then
+            char,hum,root=getCharacter()
+        else
+            requestReset("NO USABLE VEHICLE AFTER DISMOUNT")
+            return
+        end
+    end
+    phase="TARGET_FOLLOW"
+    local owner="TARGET_FOLLOW"
+    if not beginMovement(g,owner) then return end
+    local bodyGyro=trackMovement(Instance.new("BodyGyro")); bodyGyro.Name="AutomationBodyGyro"; bodyGyro.MaxTorque=Vector3.new(math.huge,math.huge,math.huge); bodyGyro.D=500; bodyGyro.P=150000; bodyGyro.Parent=root
+    local bodyVelocity=trackMovement(Instance.new("BodyVelocity")); bodyVelocity.Name="AutomationBodyVelocity"; bodyVelocity.MaxForce=Vector3.new(math.huge,math.huge,math.huge); bodyVelocity.Parent=root
+    antiStuckBegin(g,owner,root)
+    while validGeneration(g) and movementOwner==owner do
+        char,hum,root=getCharacter()
+        if not char or not hum or not root then break end
+        if not playerIsInVehicle(char,hum) then
+            saveExitedVehicle(selectedVehicle)
+            endMovement(owner)
+            if not returnToLastCar(g) then requestReset("VEHICLE LOST AFTER DISMOUNT") end
+            return
+        end
+        local plr,tr=getClosestCriminal(root)
+        currentTarget=plr
+        targetRoot=tr
+        if not tr then
+            bodyVelocity.Velocity=Vector3.zero
+            antiStuckState=nil
+            task.wait(0.5)
+            continue
+        end
+        local targetPos=tr.Position
+        local terrainParams=RaycastParams.new()
+        terrainParams.FilterType=Enum.RaycastFilterType.Exclude
+        terrainParams.FilterDescendantsInstances={char}
+        terrainParams.IgnoreWater=true
+        local terrainHit=workspace:Raycast(root.Position,Vector3.new(targetPos.X-root.Position.X,0,targetPos.Z-root.Position.Z),terrainParams)
+        local desiredY=root.Position.Y
+        if terrainHit and terrainHit.Instance==workspace.Terrain then desiredY=math.max(desiredY,targetPos.Y+50) end
+        local desired=Vector3.new(targetPos.X,desiredY,targetPos.Z)
+        local dist=(root.Position-desired).Magnitude
+        if dist>Config.CarCruiseDistanceThreshold then
+            bodyVelocity.Velocity=(desired-root.Position).Unit*Config.CarCruiseSpeed
+            bodyGyro.CFrame=CFrame.lookAt(root.Position,desired)
+        else
+            local d3=(root.Position-targetPos).Magnitude
+            if d3>Config.CarDescendDistanceThreshold then
+                bodyVelocity.Velocity=(targetPos-root.Position).Unit*Config.CarDescendSpeed
+                bodyGyro.CFrame=CFrame.lookAt(root.Position,targetPos)
+            else
+                bodyVelocity.Velocity=Vector3.zero
+                bodyGyro.CFrame=CFrame.lookAt(root.Position,targetPos)
+                if d3<=Config.ArrestTpDistance then
+                    pcall(function() sethiddenproperty(root,"PhysicsRepRootPart",tr) end)
+                    hum.Sit=false
+                    root.CFrame=tr.CFrame*CFrame.new(0,3,2)*Config.TpOffset
+                    EquipHandcuffs()
+                    task.wait(0.1)
+                    local targetChar=tr.Parent
+                    local targetPlayerObj=Players:GetPlayerFromCharacter(targetChar)
+                    if targetChar:GetAttribute("InVehicle") then
+                        EjectNearestVehicleUser(tr)
+                    elseif attemptArrest and targetPlayerObj then
+                        pcall(function() attemptArrest(targetPlayerObj) end)
+                    end
+                    if targetChar:GetAttribute("HasHandcuffs") then
+                        if targetPlayerObj then arrestedBlacklist[targetPlayerObj]=true end
+                        UnequipHandcuffs()
+                        bodyVelocity.Velocity=Vector3.zero
+                        task.wait(0.2)
+                    end
+                end
+            end
+        end
+        if antiStuckCheck(g,owner,root) then return end
+        task.wait()
+    end
+    UnequipHandcuffs()
+    endMovement(owner)
+end
+
+local function IsTargetCovered(root)
+    if not root then
+        return true
+    end
+    local rayParams=RaycastParams.new()
+    rayParams.FilterType=Enum.RaycastFilterType.Exclude
+    local ignoreList={LocalPlayer.Character,root.Parent}
+    if workspace:FindFirstChild("Vehicles") then
+        table.insert(ignoreList,workspace.Vehicles)
+    end
+    rayParams.FilterDescendantsInstances=ignoreList
+    rayParams.IgnoreWater=true
+    local rayResult=workspace:Raycast(
+        root.Position,
+        Vector3.new(0,Config.CeilingCheckRayDistance,0),
+        rayParams
+    )
+    if rayResult and rayResult.Instance and rayResult.Instance.CanCollide then
+        return true
+    end
+    return false
+end
+local function isTargetValid(root)
+    if not root or not root.Parent then
+        return false
+    end
+    local plr=Players:GetPlayerFromCharacter(root.Parent)
+    if not plr or arrestedBlacklist[plr] then
+        return false
+    end
+    if plr.Team and plr.Team.Name~="Criminal" then
+        return false
+    end
+    local char=root.Parent
+    if char:GetAttribute("HasHandcuffs") then
+        return false
+    end
+    if root.Position.Y<Config.UndergroundYThreshold then
+        return false
+    end
+    if IsTargetCovered(root) then
+        return false
+    end
+    if char:GetAttribute("InVehicle") then
+        local vehiclesDir=workspace:FindFirstChild("Vehicles")
+        if vehiclesDir then
+            for _,v in pairs(vehiclesDir:GetChildren()) do
+                local seat=v:FindFirstChild("Seat") or v:FindFirstChild("VehicleSeat") or v:FindFirstChildWhichIsA("BasePart",true)
+                if seat and (seat.Position-root.Position).Magnitude<15 then
+                    local vName=v.Name:lower()
+                    if vName:find("heli") or vName:find("drone") or vName:find("blimp") then
+                        return false
+                    end
+                end
+            end
+        end
+    end
+    return true
+end
+local function getClosestCriminal(p_root)
+    local bestRoot,bestDist=nil,math.huge
+    local selectedPlr
+    for _,plr in pairs(Players:GetPlayers()) do
+        if plr~=LocalPlayer and plr.Character and not arrestedBlacklist[plr] then
+            if plr.Team and plr.Team.Name=="Criminal" then
+                local root=plr.Character:FindFirstChild("HumanoidRootPart")
+                if isTargetValid(root) then
+                    local d=(root.Position-p_root.Position).Magnitude
+                    if d<bestDist then
+                        bestDist=d
+                        bestRoot=root
+                        selectedPlr=plr
+                    end
+                end
+            end
+        end
+    end
+    return selectedPlr,bestRoot
+end
+
+local function EquipHandcuffs()
+    local invSys=require(ReplicatedStorage.Inventory.InventoryItemSystem)
+    for _,item in pairs(invSys.getInventoryItemsFor(LocalPlayer)) do
+        if item.obj and item.obj.Name=="Handcuffs" then
+            pcall(function()
+                item:AttemptSetEquipped(true)
+            end)
+            return true
+        end
+    end
+    return false
+end
+local function UnequipHandcuffs()
+    local invSys=require(ReplicatedStorage.Inventory.InventoryItemSystem)
+    for _,item in pairs(invSys.getInventoryItemsFor(LocalPlayer)) do
+        if item.obj and item.obj.Name=="Handcuffs" then
+            pcall(function()
+                item:AttemptSetEquipped(false)
+            end)
+            return true
+        end
+    end
+    return false
+end
+local function EjectNearestVehicleUser(targetRoot)
+    local targetChar=targetRoot and targetRoot.Parent
+    local targetVehicle=nil
+    if targetChar and targetChar:GetAttribute("InVehicle") then
+        local vehiclesDir=workspace:FindFirstChild("Vehicles")
+        if vehiclesDir then
+            for _,v in pairs(vehiclesDir:GetChildren()) do
+                local seat=v:FindFirstChild("Seat") or v:FindFirstChild("VehicleSeat") or v:FindFirstChildWhichIsA("BasePart",true)
+                if seat and (seat.Position-targetRoot.Position).Magnitude<15 then
+                    targetVehicle=v
+                    break
+                end
+            end
+        end
+    end
+    if not targetVehicle then
+        return
+    end
+    local uiModule=ReplicatedStorage:FindFirstChild("Module",true) and require(ReplicatedStorage.Module:FindFirstChild("UI",true) or ReplicatedStorage.Module)
+    if uiModule and uiModule.CircleAction and uiModule.CircleAction.Specs then
+        for _,spec in pairs(uiModule.CircleAction.Specs) do
+            local isMatch=false
+            if spec.Part and (targetVehicle:IsAncestorOf(spec.Part) or spec.Part:IsDescendantOf(targetVehicle)) then
+                isMatch=true
+            elseif spec.Text and (spec.Text:lower():find("eject") or spec.Text:lower():find("passenger")) then
+                isMatch=true
+            end
+            if isMatch then
+                pcall(function()
+                    spec:Callback(true)
+                end)
+                return
+            end
+        end
+    end
+end
+local attemptArrest
+for _,v in pairs(getgc(true)) do
+    if type(v)=="function" and islclosure(v) then
+        pcall(function()
+            if tostring(getinfo(v).name)=="AttemptArrest" then
+                attemptArrest=v
+            end
+        end)
+        if attemptArrest then
+            break
+        end
+    end
+end
+
+local RunPhase1
+local handleDeathOrRemoval
+    local PoliceData={
+        ["Custom Main Station Path"]={
+            Base=Vector3.new(-1173.24,39.42,-1583.77),
+            Path={
+                Vector3.new(-1173.24,39.42,-1583.77),
+                Vector3.new(-1177.93,39.42,-1580.66),
+                Vector3.new(-1184.32,39.42,-1575.63),
+                Vector3.new(-1188.49,39.42,-1568.75),
+                Vector3.new(-1187.33,39.42,-1560.60),
+                Vector3.new(-1184.78,39.42,-1552.89),
+                Vector3.new(-1182.62,39.42,-1546.72),
+                Vector3.new(-1175.61,34.97,-1546.03),
+                Vector3.new(-1168.76,30.16,-1546.55),
+                Vector3.new(-1161.44,27.15,-1547.99),
+                Vector3.new(-1156.07,23.25,-1551.89),
+                Vector3.new(-1154.36,21.12,-1559.06),
+                Vector3.new(-1157.26,19.07,-1566.29),
+                Vector3.new(-1162.58,19.02,-1572.38),
+                Vector3.new(-1169.74,19.02,-1576.19),
+                Vector3.new(-1177.62,19.02,-1578.67),
+                Vector3.new(-1185.61,19.07,-1580.14),
+                Vector3.new(-1193.86,19.07,-1580.63),
+                Vector3.new(-1201.85,19.07,-1580.43),
+                Vector3.new(-1209.98,19.07,-1580.09),
+                Vector3.new(-1218.11,19.07,-1580.18),
+                Vector3.new(-1226.36,19.07,-1579.78),
+                Vector3.new(-1234.43,19.02,-1578.75),
+                Vector3.new(-1239.75,19.07,-1573.05),
+                Vector3.new(-1243.11,19.07,-1565.64),
+                Vector3.new(-1248.50,19.02,-1559.53),
+                Vector3.new(-1256.50,19.02,-1558.65),
+                Vector3.new(-1262.43,19.02,-1554.62),
+                Vector3.new(-1259.15,18.71,-1549.22),
+                Vector3.new(-1251.26,18.62,-1547.54),
+                Vector3.new(-1244.88,18.62,-1546.87)
+            }
+        },
+        ["Fourth Station"]={
+            Base=Vector3.new(1786.66,24.05,-4019.01),
+            Path={
+                Vector3.new(1762.26,24.00,-4024.93),
+                Vector3.new(1765.20,24.02,-4026.29),
+                Vector3.new(1772.61,24.05,-4029.64),
+                Vector3.new(1779.17,24.00,-4034.16),
+                Vector3.new(1785.04,24.00,-4040.16),
+                Vector3.new(1790.33,24.25,-4046.51),
+                Vector3.new(1792.76,24.50,-4049.68),
+                Vector3.new(1793.25,24.50,-4053.24),
+                Vector3.new(1790.91,24.09,-4061.18),
+                Vector3.new(1786.38,24.10,-4068.25),
+                Vector3.new(1784.77,24.10,-4076.59),
+                Vector3.new(1781.65,23.80,-4084.53),
+                Vector3.new(1778.85,23.80,-4092.15),
+                Vector3.new(1778.73,23.80,-4093.07)
+            }
+        },
+        ["Main Police Station Ground"]={
+            Base=Vector3.new(-1171.10,18.80,-1579.22),
+            Path={
+                Vector3.new(-1142.16,18.85,-1586.02),
+                Vector3.new(-1146.80,18.85,-1585.55),
+                Vector3.new(-1155.16,18.85,-1584.71),
+                Vector3.new(-1163.53,18.85,-1583.90),
+                Vector3.new(-1171.65,18.85,-1583.56),
+                Vector3.new(-1179.64,18.85,-1583.26),
+                Vector3.new(-1188.04,18.85,-1582.97),
+                Vector3.new(-1196.30,18.85,-1582.68),
+                Vector3.new(-1204.70,18.85,-1582.39),
+                Vector3.new(-1212.83,18.85,-1582.11),
+                Vector3.new(-1220.96,18.85,-1581.82),
+                Vector3.new(-1229.09,18.85,-1581.42),
+                Vector3.new(-1236.90,18.80,-1579.45),
+                Vector3.new(-1241.89,18.85,-1573.22),
+                Vector3.new(-1244.30,18.85,-1565.59),
+                Vector3.new(-1249.61,18.80,-1559.48),
+                Vector3.new(-1257.60,18.80,-1559.35),
+                Vector3.new(-1263.00,18.79,-1555.37),
+                Vector3.new(-1260.26,18.40,-1547.61),
+                Vector3.new(-1252.41,18.40,-1546.17),
+                Vector3.new(-1244.15,18.40,-1546.12),
+                Vector3.new(-1244.08,18.40,-1546.12)
+            }
+        },
+        ["Museum Police Station"]={
+            Base=Vector3.new(738.20,44.96,1120.53),
+            Path={
+                Vector3.new(732.75,44.96,1125.10),
+                Vector3.new(733.10,44.96,1122.05),
+                Vector3.new(733.02,44.96,1113.69),
+                Vector3.new(731.74,44.96,1105.80),
+                Vector3.new(730.05,44.96,1097.57),
+                Vector3.new(728.25,44.95,1089.37),
+                Vector3.new(730.33,44.94,1081.29),
+                Vector3.new(735.58,44.37,1075.00),
+                Vector3.new(741.75,44.77,1069.30),
+                Vector3.new(744.70,44.96,1066.60)
+            }
+        },
+        ["Military Base"]={
+            Base=Vector3.new(1801.00,25.54,-891.02),
+            Path={
+                Vector3.new(1805.17,25.54,-900.65),
+                Vector3.new(1805.17,25.54,-900.65),
+                Vector3.new(1799.38,25.54,-901.80),
+                Vector3.new(1791.31,25.57,-902.75),
+                Vector3.new(1783.10,25.60,-903.71),
+                Vector3.new(1775.02,25.54,-904.70),
+                Vector3.new(1766.97,25.54,-905.80),
+                Vector3.new(1758.94,25.54,-907.13),
+                Vector3.new(1753.12,25.54,-908.27),
+                Vector3.new(1753.12,25.54,-908.27)
+            }
+        },
+        ["Fifth Station"]={
+            Base=Vector3.new(1822.10,25.55,-636.60),
+            Path={
+                Vector3.new(1820.55,25.54,-607.59),
+                Vector3.new(1822.75,25.54,-616.20),
+                Vector3.new(1827.02,25.54,-623.28),
+                Vector3.new(1831.25,25.54,-630.38),
+                Vector3.new(1835.55,25.08,-637.60),
+                Vector3.new(1844.01,25.00,-651.80),
+                Vector3.new(1848.31,25.00,-659.02)
+            }
+        }
+    }
+
+
+RunPhase1=function(g)
+    if phase1Running or not validGeneration(g) then return end
+    phase1Running=true
+    phase1Active=true
+    phase1Complete=false
+    phase="PHASE_1"
+    local char,hum,root=getCharacter()
+    if not char or not hum or not root then phase1Running=false; return end
+    local closestStation=nil
+    local minBaseDist=math.huge
+    for _,data in pairs(PoliceData) do
+        local dist=(root.Position-data.Base).Magnitude
+        if dist<minBaseDist then minBaseDist=dist; closestStation=data end
+    end
+    if not closestStation then phase1Running=false; return end
+    if not beginMovement(g,"PHASE_1") then phase1Running=false; return end
+    antiStuckBegin(g,"PHASE_1",root)
+    for _,waypoint in ipairs(closestStation.Path) do
+        if not validGeneration(g) or phase~="PHASE_1" then endMovement("PHASE_1"); phase1Running=false; return end
+        char,hum,root=getCharacter()
+        if not char or not hum or not root then endMovement("PHASE_1"); phase1Running=false; return end
+        root.CFrame=CFrame.new(waypoint)
+        local ok=waitProximity(g,root,waypoint,6,2,"PHASE_1")
+        if not ok and validGeneration(g) then
+            root.CFrame=CFrame.new(waypoint)
+        end
+        if antiStuckCheck(g,"PHASE_1",root) then phase1Running=false; return end
+        task.wait(Config.WaypointDelay)
+    end
+    char,hum,root=getCharacter()
+    if not char or not hum or not root then endMovement("PHASE_1"); phase1Running=false; return end
+    phase1FinalPosition=root.Position
+    phase1Active=false
+    phase1Complete=true
+    phase="PHASE_1_FINAL_WAIT"
+    endMovement("PHASE_1")
+    local final=phase1FinalPosition
+    local start=tick()
+    while validGeneration(g) and tick()-start<Config.Phase1FinalWait do
+        char,hum,root=getCharacter()
+        if not char or not hum or not root then phase1Running=false; return end
+        if (root.Position-final).Magnitude>30 then
+            requestReset("PHASE 1 FINAL LAGBACK")
+            phase1Running=false
+            return
+        end
+        task.wait(0.05)
+    end
+    if not validGeneration(g) then phase1Running=false; return end
+    char,hum,root=getCharacter()
+    if not char or not hum or not root or (root.Position-final).Magnitude>30 then
+        requestReset("PHASE 1 FINAL POSITION INVALID")
+        phase1Running=false
+        return
+    end
+    phase1Running=false
+    if not selectAndEnterPhase1Vehicle(g) then return end
+end
+
+local function createSessionNow()
+    if ServerHopActive then return end
+    local char,hum,root=getCharacter()
+    if not char or not hum or not root then return end
+    local g=newGeneration()
+    sessionConnections[#sessionConnections+1]=hum.Died:Connect(function() handleDeathOrRemoval("HUMANOID DIED") end)
+    task.spawn(function()
+        if not validGeneration(g) then return end
+        RunPhase1(g)
+        if not validGeneration(g) then return end
+        if phase=="TARGET_FOLLOW" then
+            task.spawn(function() monitorDismount(g) end)
+            targetFollow(g)
+        end
+    end)
+end
+
+local function startSessionAfterRespawn()
+    if resetInProgress then resetInProgress=false end
+    if ServerHopActive then return end
+    local char,hum,root=getCharacter()
+    if not char or not hum or not root then return end
+    waitExactRespawnSecond()
+    if LocalPlayer.Character~=char then return end
+    createSessionNow()
+end
+
+handleDeathOrRemoval=function(reason,removedCharacter)
+    if resetInProgress then return end
+    resetInProgress=true
+    invalidateGeneration()
+    StopAllAutomation()
+    currentTarget=nil
+    targetRoot=nil
+    targetVehicle=nil
+    selectedVehicle=nil
+    phase="WAITING_FOR_RESPAWN"
+    task.spawn(function()
+        local deadline=tick()+30
+        while tick()<deadline do
+            if ServerHopActive then resetInProgress=false; return end
+            if removedCharacter and LocalPlayer.Character==removedCharacter then
+                task.wait(0.05)
+                continue
+            end
+            local char,hum,root=getCharacter()
+            if char and hum and root and (not removedCharacter or char~=removedCharacter) then
+                waitExactRespawnSecond()
+                if LocalPlayer.Character==char then
+                    resetInProgress=false
+                    createSessionNow()
+                end
+                return
+            end
+            task.wait(0.05)
+        end
+        resetInProgress=false
+    end)
+end
+
+-- Local vehicle memory is deliberately independent from targetVehicle/selectedVehicle/lastCarExited.
+local rememberedCar
+local function IsDriverVehicle(car,char,humanoid)
+    if not car or not car.Parent or not char or not humanoid then return false end
+    local seat=getVehicleSeat(car)
+    if not seat then return false end
+    if seat.Occupant==humanoid then return true end
+    local driver=car:FindFirstChild("Driver",true)
+    return driver and driver:IsA("ObjectValue") and driver.Value==LocalPlayer or false
+end
+
+getgenv().GetMyCar=function() return rememberedCar end
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        local char=LocalPlayer.Character
+        local hum=char and char:FindFirstChildOfClass("Humanoid")
+        local ok,m=pcall(vehicleUtils.GetLocalVehicleModel)
+        if ok and m and m~="" and m~=false and char and hum then
+            local car=typeof(m)=="Instance" and m or workspace:FindFirstChild(m,true)
+            if car and IsDriverVehicle(car,char,hum) then rememberedCar=car end
+        end
+    end
+end)
+
+-- Death/removal/character lifecycle is centralized. CharacterAdded never starts Phase 1 directly.
+permanentConnections[#permanentConnections+1]=LocalPlayer.CharacterRemoving:Connect(function(char)
+    handleDeathOrRemoval("CHARACTER REMOVING",char)
+end)
+permanentConnections[#permanentConnections+1]=LocalPlayer.CharacterAdded:Connect(function(char)
+    if resetInProgress then return end
+    handleDeathOrRemoval("CHARACTER ADDED",nil)
+end)
+
+-- Preserve existing player/team/server-hop/UI integrations while preventing them from starting automation controllers.
+if not ServerHopActive then
+    task.defer(function()
+        if LocalPlayer.Character then
+            startSessionAfterRespawn()
+        end
+    end)
+end
+
+ExecuteAutoArrest=function()
+    if ServerHopActive then return end
+    if automationEnabled then return end
+    startSessionAfterRespawn()
+end
+
+getgenv().StopAllAutomation=StopAllAutomation
+getgenv().RequestAutomationReset=requestReset
+getgenv().AutomationState=function()
+    return phase,automationGeneration,selectedVehicle,lastCarExited,targetVehicle
+end
+
