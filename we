@@ -1,4 +1,4 @@
-```lua
+
 local Config={
 	VehicleSearchRadius=200,
 	VehicleEntryRadius=15,
@@ -860,4 +860,4 @@ else
 		BindCharacter(char)
 	end)
 end
-```
+
