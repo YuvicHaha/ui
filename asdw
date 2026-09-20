@@ -1,0 +1,676 @@
+--[[
+    AUTO ARREST SCRIPT v2.0
+    Automated police officer arrest workflow for Roblox
+    
+    FEATURES:
+    - Patrol between police stations
+    - Auto equip handcuffs
+    - Find and pursue criminal targets
+    - Ram vehicles to disable
+    - Arrest and handcuff targets
+    - Teleport back to spawn vehicle
+]]
+
+local Config = {
+    -- Flight Settings
+    CarFlyHeight = 500,
+    CarAscendSpeed = 25,
+    CruiseSpeed = 35,
+    DescentSpeed = 20,
+    
+    -- Detection Range
+    TargetSearchRadius = 250,
+    VehicleDetectRadius = 100,
+    CloseDistance = 20,
+    
+    -- Ramming Settings
+    CarMaxRamDuration = 15,
+    TpOffset = CFrame.new(0, -3, 0),
+    
+    -- Safety
+    ObstacleCheckDistance = 50,
+    CharacterResetCooldown = 3,
+}
+
+local CurrentStation = 1
+local LastExitedVehicle = nil
+local ArrestedBlacklist = {}
+local AutoArrestActive = false
+local LastResetTime = 0
+
+-- ============================================================================
+-- SERVICES & VARIABLES
+-- ============================================================================
+
+local Players = game:GetService("Players")
+local Workspace = workspace
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- ============================================================================
+-- MODULES
+-- ============================================================================
+
+local Modules = {
+    Vehicle = require(ReplicatedStorage.Vehicle.VehicleUtils),
+    UI = require(ReplicatedStorage.Module.UI),
+    ItemSystem = require(ReplicatedStorage.Inventory.InventoryItemSystem),
+}
+
+-- ============================================================================
+-- STATION DATA
+-- ============================================================================
+
+local PoliceStations = {
+    {
+        Name = "Custom Main Station",
+        Base = Vector3.new(-1173.24, 39.42, -1583.77),
+        Path = {
+            Vector3.new(-1173.24, 39.42, -1583.77),
+            Vector3.new(-1177.93, 39.42, -1580.66),
+            Vector3.new(-1184.32, 39.42, -1575.63),
+            Vector3.new(-1188.49, 39.42, -1568.75),
+            Vector3.new(-1187.33, 39.42, -1560.60),
+            Vector3.new(-1184.78, 39.42, -1552.89),
+            Vector3.new(-1182.62, 39.42, -1546.72),
+            Vector3.new(-1175.61, 34.97, -1546.03),
+            Vector3.new(-1168.76, 30.16, -1546.55),
+            Vector3.new(-1161.44, 27.15, -1547.99),
+            Vector3.new(-1156.07, 23.25, -1551.89),
+            Vector3.new(-1154.36, 21.12, -1559.06),
+            Vector3.new(-1157.26, 19.07, -1566.29),
+            Vector3.new(-1162.58, 19.02, -1572.38),
+            Vector3.new(-1169.74, 19.02, -1576.19),
+            Vector3.new(-1177.62, 19.02, -1578.67),
+            Vector3.new(-1185.61, 19.07, -1580.14),
+            Vector3.new(-1193.86, 19.07, -1580.63),
+            Vector3.new(-1201.85, 19.07, -1580.43),
+            Vector3.new(-1209.98, 19.07, -1580.09),
+            Vector3.new(-1218.11, 19.07, -1580.18),
+            Vector3.new(-1226.36, 19.07, -1579.78),
+            Vector3.new(-1234.43, 19.02, -1578.75),
+            Vector3.new(-1239.75, 19.07, -1573.05),
+            Vector3.new(-1243.11, 19.07, -1565.64),
+            Vector3.new(-1248.50, 19.02, -1559.53),
+            Vector3.new(-1256.50, 19.02, -1558.65),
+            Vector3.new(-1262.43, 19.02, -1554.62),
+            Vector3.new(-1259.15, 18.71, -1549.22),
+            Vector3.new(-1251.26, 18.62, -1547.54),
+            Vector3.new(-1244.88, 18.62, -1546.87),
+        },
+    },
+    {
+        Name = "Fourth Station",
+        Base = Vector3.new(1786.66, 24.05, -4019.01),
+        Path = {
+            Vector3.new(1762.26, 24.00, -4024.93),
+            Vector3.new(1765.20, 24.02, -4026.29),
+            Vector3.new(1772.61, 24.05, -4029.64),
+            Vector3.new(1779.17, 24.00, -4034.16),
+            Vector3.new(1785.04, 24.00, -4040.16),
+            Vector3.new(1790.33, 24.25, -4046.51),
+            Vector3.new(1792.76, 24.50, -4049.68),
+            Vector3.new(1793.25, 24.50, -4053.24),
+            Vector3.new(1790.91, 24.09, -4061.18),
+            Vector3.new(1786.38, 24.10, -4068.25),
+            Vector3.new(1784.77, 24.10, -4076.59),
+            Vector3.new(1781.65, 23.80, -4084.53),
+            Vector3.new(1778.85, 23.80, -4092.15),
+            Vector3.new(1778.73, 23.80, -4093.07),
+        },
+    },
+    {
+        Name = "Main Police Station Ground",
+        Base = Vector3.new(-1171.10, 18.80, -1579.22),
+        Path = {
+            Vector3.new(-1142.16, 18.85, -1586.02),
+            Vector3.new(-1146.80, 18.85, -1585.55),
+            Vector3.new(-1155.16, 18.85, -1584.71),
+            Vector3.new(-1163.53, 18.85, -1583.90),
+            Vector3.new(-1171.65, 18.85, -1583.56),
+            Vector3.new(-1179.64, 18.85, -1583.26),
+            Vector3.new(-1188.04, 18.85, -1582.97),
+            Vector3.new(-1196.30, 18.85, -1582.68),
+            Vector3.new(-1204.70, 18.85, -1582.39),
+            Vector3.new(-1212.83, 18.85, -1582.11),
+            Vector3.new(-1220.96, 18.85, -1581.82),
+            Vector3.new(-1229.09, 18.85, -1581.42),
+            Vector3.new(-1236.90, 18.80, -1579.45),
+            Vector3.new(-1241.89, 18.85, -1573.22),
+            Vector3.new(-1244.30, 18.85, -1565.59),
+            Vector3.new(-1249.61, 18.80, -1559.48),
+            Vector3.new(-1257.60, 18.80, -1559.35),
+            Vector3.new(-1263.00, 18.79, -1555.37),
+            Vector3.new(-1260.26, 18.40, -1547.61),
+            Vector3.new(-1252.41, 18.40, -1546.17),
+            Vector3.new(-1244.15, 18.40, -1546.12),
+            Vector3.new(-1244.08, 18.40, -1546.12),
+        },
+    },
+}
+
+-- ============================================================================
+-- UTILITY FUNCTIONS
+-- ============================================================================
+
+local function Print(prefix, message)
+    print("[AUTO ARREST] [" .. prefix .. "] " .. message)
+end
+
+local function IsPlayerAlive()
+    return LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.Humanoid.Health > 0
+end
+
+local function UpdateCharacter()
+    Character = LocalPlayer.Character
+    HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+    Humanoid = Character:WaitForChild("Humanoid")
+end
+
+local function ResetCharacter()
+    if tick() - LastResetTime < Config.CharacterResetCooldown then return end
+    LastResetTime = tick()
+    
+    Humanoid:TakeDamage(Humanoid.Health)
+    Print("SYSTEM", "Character reset")
+end
+
+local function Teleport(position)
+    if not IsPlayerAlive() then return end
+    pcall(function()
+        HumanoidRootPart.CFrame = CFrame.new(position)
+    end)
+end
+
+local function IsInVehicle()
+    if not Character then return false end
+    local timeout = 2.0
+    local start = tick()
+    while tick() - start < timeout do
+        if Character:GetAttribute("InVehicle") or Humanoid.SeatPart ~= nil then
+            return true
+        end
+        task.wait(0.1)
+    end
+    return false
+end
+
+-- ============================================================================
+-- EQUIPMENT FUNCTIONS
+-- ============================================================================
+
+local function EquipHandcuffs()
+    local invSys = Modules.ItemSystem
+    
+    for _, item in pairs(invSys.getInventoryItemsFor(LocalPlayer)) do
+        if item.obj and item.obj.Name == "Handcuffs" then
+            pcall(function() item:AttemptSetEquipped(true) end)
+            Print("EQUIPMENT", "Handcuffs equipped")
+            return true
+        end
+    end
+    Print("WARNING", "Handcuffs not found in inventory")
+    return false
+end
+
+local function SpawnCamaro()
+    local spawnRemote = ReplicatedStorage:FindFirstChild("GarageSpawnVehicle", true)
+    if spawnRemote then
+        pcall(function()
+            spawnRemote:FireServer("Chassis", "Camaro")
+            Print("VEHICLE", "Camaro spawned")
+            task.wait(2)
+            LastExitedVehicle = nil
+        end)
+    end
+end
+
+-- ============================================================================
+-- DETECTION FUNCTIONS
+-- ============================================================================
+
+local function FindClosestCriminal()
+    local closest = nil
+    local minDist = Config.TargetSearchRadius
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and not ArrestedBlacklist[player] then
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if not root then continue end
+            
+            local team = player.Team
+            if not team or team.Name ~= "Criminal" then continue end
+            
+            -- Skip if in restricted vehicle
+            if player.Character:GetAttribute("InVehicle") then
+                local vName = ""
+                local vehiclesDir = Workspace:FindFirstChild("Vehicles")
+                if vehiclesDir then
+                    for _, v in pairs(vehiclesDir:GetChildren()) do
+                        local seat = v:FindFirstChild("Seat") or v:FindFirstChild("VehicleSeat")
+                        if seat and (seat.Position - root.Position).Magnitude < 15 then
+                            vName = v.Name:lower()
+                            break
+                        end
+                    end
+                end
+                
+                if vName:find("heli") or vName:find("drone") or vName:find("blimp") then
+                    continue
+                end
+            end
+            
+            local dist = (HumanoidRootPart.Position - root.Position).Magnitude
+            if dist < minDist then
+                minDist = dist
+                closest = { player = player, root = root, distance = dist }
+            end
+        end
+    end
+    
+    return closest
+end
+
+local function FindNearestVehicle()
+    local closest = nil
+    local minDist = Config.VehicleDetectRadius
+    local vehiclesDir = Workspace:FindFirstChild("Vehicles")
+    
+    if not vehiclesDir then return nil end
+    
+    for _, vehicle in pairs(vehiclesDir:GetChildren()) do
+        local seat = vehicle:FindFirstChild("Seat") or vehicle:FindFirstChild("VehicleSeat")
+        if not seat then continue end
+        
+        local dist = (HumanoidRootPart.Position - seat.Position).Magnitude
+        if dist < minDist then
+            minDist = dist
+            closest = { vehicle = vehicle, seat = seat, distance = dist }
+        end
+    end
+    
+    return closest
+end
+
+local function IsVehicleOccupied(vehicle)
+    if not vehicle then return false end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character and player.Character.Humanoid.SeatPart then
+            if vehicle:IsAncestorOf(player.Character.Humanoid.SeatPart) then
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+-- ============================================================================
+-- MOVEMENT FUNCTIONS
+-- ============================================================================
+
+local function CreateFlightPhysics()
+    local bodyGyro = Instance.new("BodyGyro", HumanoidRootPart)
+    local bodyVelocity = Instance.new("BodyVelocity", HumanoidRootPart)
+    
+    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bodyGyro.D = 500
+    bodyGyro.P = 150000
+    
+    return bodyGyro, bodyVelocity
+end
+
+local function FlyToPosition(targetPos, speed, maxHeight)
+    if not IsPlayerAlive() then return false end
+    
+    local bodyGyro, bodyVelocity = CreateFlightPhysics()
+    local startTime = tick()
+    local timeout = 60
+    
+    while AutoArrestActive and IsPlayerAlive() and (tick() - startTime) < timeout do
+        if not HumanoidRootPart then return false end
+        
+        -- Ascend to max height first
+        if HumanoidRootPart.Position.Y < maxHeight then
+            bodyVelocity.Velocity = Vector3.new(0, Config.CarAscendSpeed, 0)
+            bodyGyro.CFrame = CFrame.new(HumanoidRootPart.Position, HumanoidRootPart.Position + Vector3.new(0, 0, -1))
+        else
+            -- Cruise horizontally to target
+            local direction = (targetPos - HumanoidRootPart.Position).Unit
+            local cruiseTarget = targetPos + Vector3.new(0, maxHeight - targetPos.Y, 0)
+            
+            bodyVelocity.Velocity = direction * speed
+            bodyGyro.CFrame = CFrame.new(HumanoidRootPart.Position, cruiseTarget)
+            
+            -- Check if reached
+            if (HumanoidRootPart.Position - targetPos).Magnitude < 20 then
+                bodyVelocity.Velocity = Vector3.zero
+                bodyGyro:Destroy()
+                bodyVelocity:Destroy()
+                return true
+            end
+        end
+        
+        task.wait(0.05)
+    end
+    
+    pcall(function() bodyGyro:Destroy() end)
+    pcall(function() bodyVelocity:Destroy() end)
+    return false
+end
+
+local function EnterVehicle(vehicle)
+    if not vehicle or IsVehicleOccupied(vehicle) then return false end
+    
+    local seat = vehicle:FindFirstChild("Seat") or vehicle:FindFirstChild("VehicleSeat")
+    if not seat then return false end
+    
+    -- Find and trigger the UI spec for this vehicle
+    for _, spec in pairs(Modules.UI.CircleAction.Specs or {}) do
+        if spec.Part and spec.Part == seat then
+            pcall(function() spec:Callback(true) end)
+            Print("VEHICLE", "Entered vehicle: " .. vehicle.Name)
+            LastExitedVehicle = vehicle
+            return true
+        end
+    end
+    
+    return false
+end
+
+local function ExitVehicle()
+    for _, spec in pairs(Modules.UI.CircleAction.Specs or {}) do
+        if spec.Text and (spec.Text:lower():find("eject") or spec.Text:lower():find("exit")) then
+            pcall(function() spec:Callback(true) end)
+            Print("VEHICLE", "Exited vehicle")
+            return true
+        end
+    end
+    return false
+end
+
+-- ============================================================================
+-- PATROL FUNCTIONS
+-- ============================================================================
+
+local function PatrolStation(stationIndex)
+    local station = PoliceStations[stationIndex]
+    if not station then return end
+    
+    Print("PATROL", "Starting patrol at " .. station.Name)
+    
+    -- Teleport to start of path
+    Teleport(station.Base)
+    task.wait(1)
+    
+    -- Follow path waypoints
+    for _, waypoint in pairs(station.Path) do
+        if not AutoArrestActive then break end
+        
+        Teleport(waypoint)
+        task.wait(0.5)
+        
+        -- Check for targets while patrolling
+        local target = FindClosestCriminal()
+        if target then
+            Print("PATROL", "Target spotted during patrol")
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- ============================================================================
+-- ARREST WORKFLOW
+-- ============================================================================
+
+local function GetArrestFunction()
+    for _, v in pairs(getgc(true)) do
+        if type(v) == "function" and islclosure(v) then
+            pcall(function()
+                if tostring(getinfo(v).name) == "AttemptArrest" then
+                    return v
+                end
+            end)
+        end
+    end
+    return nil
+end
+
+local function RamVehicle(targetVehicle, targetRoot)
+    if not targetVehicle or not targetRoot then return false end
+    
+    local bodyGyro, bodyVelocity = CreateFlightPhysics()
+    local ramStart = tick()
+    
+    Print("RAM", "Starting ram sequence on " .. targetVehicle.Name)
+    
+    while AutoArrestActive and (tick() - ramStart) < Config.CarMaxRamDuration do
+        if not IsPlayerAlive() or not targetRoot.Parent then
+            pcall(function() bodyGyro:Destroy() end)
+            pcall(function() bodyVelocity:Destroy() end)
+            return false
+        end
+        
+        -- Position directly above target
+        pcall(function()
+            sethiddenproperty(HumanoidRootPart, "PhysicsRepRootPart", targetRoot)
+        end)
+        
+        HumanoidRootPart.CFrame = targetRoot.CFrame * Config.TpOffset
+        bodyVelocity.Velocity = Vector3.zero
+        
+        -- Check if tire popped
+        local currentPop = targetVehicle:GetAttribute("VehicleTiresLastPop")
+        if currentPop and currentPop ~= (targetVehicle:GetAttribute("VehicleTiresLastPop") or 0) then
+            Print("RAM", "Vehicle disabled, exiting")
+            pcall(function() bodyGyro:Destroy() end)
+            pcall(function() bodyVelocity:Destroy() end)
+            return true
+        end
+        
+        task.wait(0.1)
+    end
+    
+    pcall(function() bodyGyro:Destroy() end)
+    pcall(function() bodyVelocity:Destroy() end)
+    return false
+end
+
+local function ArrestTarget(target)
+    if not target or not target.root or not IsPlayerAlive() then return false end
+    
+    Print("ARREST", "Initiating arrest on " .. target.player.Name)
+    
+    local attemptArrest = GetArrestFunction()
+    local arrestStart = tick()
+    
+    while AutoArrestActive and (tick() - arrestStart) < 30 do
+        if not target.root.Parent or not IsPlayerAlive() then return false end
+        
+        -- Position near target
+        pcall(function()
+            sethiddenproperty(HumanoidRootPart, "PhysicsRepRootPart", target.root)
+        end)
+        
+        HumanoidRootPart.CFrame = target.root.CFrame + Vector3.new(5, 0, 0)
+        
+        -- Equip handcuffs
+        EquipHandcuffs()
+        
+        -- If in vehicle, eject them
+        if target.root.Parent:GetAttribute("InVehicle") then
+            ExitVehicle()
+            task.wait(0.5)
+        else
+            -- Attempt arrest
+            if attemptArrest then
+                pcall(function()
+                    attemptArrest(target.player)
+                end)
+            end
+        end
+        
+        -- Check if handcuffed
+        if target.root.Parent:GetAttribute("HasHandcuffs") then
+            Print("ARREST", "Target handcuffed: " .. target.player.Name)
+            ArrestedBlacklist[target.player] = true
+            return true
+        end
+        
+        task.wait(0.2)
+    end
+    
+    return false
+end
+
+-- ============================================================================
+-- MAIN WORKFLOW
+-- ============================================================================
+
+local function ExecuteArrestWorkflow()
+    Print("WORKFLOW", "Starting arrest workflow")
+    
+    -- Step 1: Find target from air
+    local target = FindClosestCriminal()
+    if not target then
+        Print("SEARCH", "No targets found")
+        return false
+    end
+    
+    Print("TARGET", "Found criminal: " .. target.player.Name .. " at " .. tostring(target.distance))
+    
+    -- Step 2: Ascend to flight altitude
+    if not FlyToPosition(HumanoidRootPart.Position + Vector3.new(0, Config.CarFlyHeight, 0), 0, Config.CarFlyHeight) then
+        return false
+    end
+    
+    -- Step 3: Find nearest vehicle
+    local vehicleData = FindNearestVehicle()
+    if not vehicleData or IsVehicleOccupied(vehicleData.vehicle) then
+        Print("VEHICLE", "No suitable vehicle found, spawning Camaro")
+        SpawnCamaro()
+        task.wait(2)
+        vehicleData = FindNearestVehicle()
+    end
+    
+    if not vehicleData then
+        Print("ERROR", "Cannot find vehicle")
+        return false
+    end
+    
+    -- Step 4: Fly to vehicle and enter
+    if not FlyToPosition(vehicleData.seat.Position + Vector3.new(0, 30, 0), Config.CruiseSpeed, 100) then
+        return false
+    end
+    
+    -- Descend and enter vehicle
+    local bodyGyro, bodyVelocity = CreateFlightPhysics()
+    while IsPlayerAlive() and HumanoidRootPart.Position.Y > vehicleData.seat.Position.Y + 5 do
+        bodyVelocity.Velocity = Vector3.new(0, -Config.DescentSpeed, 0)
+        bodyGyro.CFrame = CFrame.new(HumanoidRootPart.Position, vehicleData.seat.Position)
+        task.wait(0.05)
+    end
+    pcall(function() bodyGyro:Destroy() end)
+    pcall(function() bodyVelocity:Destroy() end)
+    
+    if not EnterVehicle(vehicleData.vehicle) then
+        Print("ERROR", "Failed to enter vehicle")
+        return false
+    end
+    
+    -- Step 5: Ascend above vehicle
+    task.wait(1)
+    if not FlyToPosition(HumanoidRootPart.Position + Vector3.new(0, 500, 0), Config.CarAscendSpeed, 500) then
+        return false
+    end
+    
+    -- Step 6: Fly to target
+    target = FindClosestCriminal()
+    if not target then
+        Print("ERROR", "Target lost during flight")
+        return false
+    end
+    
+    if not FlyToPosition(target.root.Position + Vector3.new(0, 50, 0), Config.CruiseSpeed, 500) then
+        return false
+    end
+    
+    -- Step 7: Descend and ram if in vehicle
+    if target.root.Parent:GetAttribute("InVehicle") then
+        local targetVehicle = nil
+        local vehiclesDir = Workspace:FindFirstChild("Vehicles")
+        
+        for _, v in pairs(vehiclesDir:GetChildren() or {}) do
+            local seat = v:FindFirstChild("Seat")
+            if seat and (seat.Position - target.root.Position).Magnitude < 15 then
+                targetVehicle = v
+                break
+            end
+        end
+        
+        if targetVehicle then
+            RamVehicle(targetVehicle, target.root)
+            ExitVehicle()
+            task.wait(1)
+        end
+    end
+    
+    -- Step 8: Arrest target
+    target = FindClosestCriminal()
+    if target then
+        ArrestTarget(target)
+    end
+    
+    return true
+end
+
+-- ============================================================================
+-- MAIN LOOP
+-- ============================================================================
+
+local function Start()
+    AutoArrestActive = true
+    Print("START", "Auto arrest activated")
+    
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1)
+        UpdateCharacter()
+        Print("RESPAWN", "Character respawned")
+    end)
+    
+    while AutoArrestActive do
+        if not IsPlayerAlive() then
+            task.wait(1)
+            continue
+        end
+        
+        local success = ExecuteArrestWorkflow()
+        
+        if not success then
+            Print("CYCLE", "Workflow failed, restarting...")
+        end
+        
+        task.wait(2)
+    end
+end
+
+local function Stop()
+    AutoArrestActive = false
+    Print("STOP", "Auto arrest deactivated")
+end
+
+-- ============================================================================
+-- EXPOSE FUNCTIONS
+-- ============================================================================
+
+getgenv().StartAutoArrest = Start
+getgenv().StopAutoArrest = Stop
+
+Print("READY", "Script loaded. Use StartAutoArrest() to begin, StopAutoArrest() to stop")
