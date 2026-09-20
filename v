@@ -1,0 +1,1010 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local lp = Players.LocalPlayer
+local character = lp.Character
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+local vehicleUtils = require(ReplicatedStorage:WaitForChild("Vehicle"):WaitForChild("VehicleUtils"))
+local UI = require(ReplicatedStorage.Module.UI)
+local invSys = require(ReplicatedStorage.Inventory.InventoryItemSystem)
+
+local Config = {
+    WaypointDelay = 0.2,
+    PostPathDelay = 1,
+    VehicleSearchDistance = 15,
+    TargetSearchHeight = 500,
+    ReturnHeight = 50,
+    TargetEngageDistance = 20,
+    TargetLockDistance = 5,
+    TargetTpOffset = CFrame.new(0,0,-2),
+    TargetApproachSpeed = 100,
+    FallbackDistance = 300,
+    FallbackAwayDistance = 300,
+    EnemySpawnClearance = 200,
+    ObstacleCheckDistance = 75,
+    AscendSpeed = 100,
+    DescendSpeed = 100,
+    ArrestTimeout = 10,
+    TirePopCheckDelay = 0.2,
+    UndergroundYThreshold = -50
+}
+
+local PoliceData = {
+    ["Custom Main Station Path"] = {
+        Base = Vector3.new(-1173.24,39.42,-1583.77),
+        Path = {
+            Vector3.new(-1173.24,39.42,-1583.77),
+            Vector3.new(-1177.93,39.42,-1580.66),
+            Vector3.new(-1184.32,39.42,-1575.63),
+            Vector3.new(-1188.49,39.42,-1568.75),
+            Vector3.new(-1187.33,39.42,-1560.60),
+            Vector3.new(-1184.78,39.42,-1552.89),
+            Vector3.new(-1182.62,39.42,-1546.72),
+            Vector3.new(-1175.61,34.97,-1546.03),
+            Vector3.new(-1168.76,30.16,-1546.55),
+            Vector3.new(-1161.44,27.15,-1547.99),
+            Vector3.new(-1156.07,23.25,-1551.89),
+            Vector3.new(-1154.36,21.12,-1559.06),
+            Vector3.new(-1157.26,19.07,-1566.29),
+            Vector3.new(-1162.58,19.02,-1572.38),
+            Vector3.new(-1169.74,19.02,-1576.19),
+            Vector3.new(-1177.62,19.02,-1578.67),
+            Vector3.new(-1185.61,19.07,-1580.14),
+            Vector3.new(-1193.86,19.07,-1580.63),
+            Vector3.new(-1201.85,19.07,-1580.43),
+            Vector3.new(-1209.98,19.07,-1580.09),
+            Vector3.new(-1218.11,19.07,-1580.18),
+            Vector3.new(-1226.36,19.07,-1579.78),
+            Vector3.new(-1234.43,19.02,-1578.75),
+            Vector3.new(-1239.75,19.07,-1573.05),
+            Vector3.new(-1243.11,19.07,-1565.64),
+            Vector3.new(-1248.50,19.02,-1559.53),
+            Vector3.new(-1256.50,19.02,-1558.65),
+            Vector3.new(-1262.43,19.02,-1554.62),
+            Vector3.new(-1259.15,18.71,-1549.22),
+            Vector3.new(-1251.26,18.62,-1547.54),
+            Vector3.new(-1244.88,18.62,-1546.87)
+        }
+    },
+    ["Fourth Station"] = {
+        Base = Vector3.new(1786.66,24.05,-4019.01),
+        Path = {
+            Vector3.new(1762.26,24.00,-4024.93),
+            Vector3.new(1765.20,24.02,-4026.29),
+            Vector3.new(1772.61,24.05,-4029.64),
+            Vector3.new(1779.17,24.00,-4034.16),
+            Vector3.new(1785.04,24.00,-4040.16),
+            Vector3.new(1790.33,24.25,-4046.51),
+            Vector3.new(1792.76,24.50,-4049.68),
+            Vector3.new(1793.25,24.50,-4053.24),
+            Vector3.new(1790.91,24.09,-4061.18),
+            Vector3.new(1786.38,24.10,-4068.25),
+            Vector3.new(1784.77,24.10,-4076.59),
+            Vector3.new(1781.65,23.80,-4084.53),
+            Vector3.new(1778.85,23.80,-4092.15),
+            Vector3.new(1778.73,23.80,-4093.07)
+        }
+    },
+    ["Main Police Station Ground"] = {
+        Base = Vector3.new(-1171.10,18.80,-1579.22),
+        Path = {
+            Vector3.new(-1142.16,18.85,-1586.02),
+            Vector3.new(-1146.80,18.85,-1585.55),
+            Vector3.new(-1155.16,18.85,-1584.71),
+            Vector3.new(-1163.53,18.85,-1583.90),
+            Vector3.new(-1171.65,18.85,-1583.56),
+            Vector3.new(-1179.64,18.85,-1583.26),
+            Vector3.new(-1188.04,18.85,-1582.97),
+            Vector3.new(-1196.30,18.85,-1582.68),
+            Vector3.new(-1204.70,18.85,-1582.39),
+            Vector3.new(-1212.83,18.85,-1582.11),
+            Vector3.new(-1220.96,18.85,-1581.82),
+            Vector3.new(-1229.09,18.85,-1581.42),
+            Vector3.new(-1236.90,18.80,-1579.45),
+            Vector3.new(-1241.89,18.85,-1573.22),
+            Vector3.new(-1244.30,18.85,-1565.59),
+            Vector3.new(-1249.61,18.80,-1559.48),
+            Vector3.new(-1257.60,18.80,-1559.35),
+            Vector3.new(-1263.00,18.79,-1555.37),
+            Vector3.new(-1260.26,18.40,-1547.61),
+            Vector3.new(-1252.41,18.40,-1546.17),
+            Vector3.new(-1244.15,18.40,-1546.12),
+            Vector3.new(-1244.08,18.40,-1546.12)
+        }
+    },
+    ["Museum Police Station"] = {
+        Base = Vector3.new(738.20,44.96,1120.53),
+        Path = {
+            Vector3.new(732.75,44.96,1125.10),
+            Vector3.new(733.10,44.96,1122.05),
+            Vector3.new(733.02,44.96,1113.69),
+            Vector3.new(731.74,44.96,1105.80),
+            Vector3.new(730.05,44.96,1097.57),
+            Vector3.new(728.25,44.95,1089.37),
+            Vector3.new(730.33,44.94,1081.29),
+            Vector3.new(735.58,44.37,1075.00),
+            Vector3.new(741.75,44.77,1069.30),
+            Vector3.new(744.70,44.96,1066.60)
+        }
+    },
+    ["Military Base"] = {
+        Base = Vector3.new(1801.00,25.54,-891.02),
+        Path = {
+            Vector3.new(1805.17,25.54,-900.65),
+            Vector3.new(1805.17,25.54,-900.65),
+            Vector3.new(1799.38,25.54,-901.80),
+            Vector3.new(1791.31,25.57,-902.75),
+            Vector3.new(1783.10,25.60,-903.71),
+            Vector3.new(1775.02,25.54,-904.70),
+            Vector3.new(1766.97,25.54,-905.80),
+            Vector3.new(1758.94,25.54,-907.13),
+            Vector3.new(1753.12,25.54,-908.27),
+            Vector3.new(1753.12,25.54,-908.27)
+        }
+    },
+    ["Fifth Station"] = {
+        Base = Vector3.new(1822.10,25.55,-636.60),
+        Path = {
+            Vector3.new(1820.55,25.54,-607.59),
+            Vector3.new(1822.75,25.54,-616.20),
+            Vector3.new(1827.02,25.54,-623.28),
+            Vector3.new(1831.25,25.54,-630.38),
+            Vector3.new(1835.55,25.08,-637.60),
+            Vector3.new(1844.01,25.00,-651.80),
+            Vector3.new(1848.31,25.00,-659.02)
+        }
+    }
+}
+
+local state = {
+    phase = 0,
+    phase1Complete = false,
+    cycleId = 0,
+    currentVehicle = nil,
+    lastExitedVehicle = nil,
+    targetVehicle = nil,
+    targetPlayer = nil,
+    targetCharacter = nil,
+    targetRoot = nil,
+    bodyVelocity = nil,
+    bodyGyro = nil,
+    arrestedBlacklist = {},
+    rememberedCar = nil
+}
+
+local function cleanup()
+    if state.bodyVelocity then
+        state.bodyVelocity:Destroy()
+        state.bodyVelocity = nil
+    end
+    if state.bodyGyro then
+        state.bodyGyro:Destroy()
+        state.bodyGyro = nil
+    end
+    state.currentVehicle = nil
+    state.targetPlayer = nil
+    state.targetCharacter = nil
+    state.targetRoot = nil
+    state.targetVehicle = nil
+    pcall(function()
+        sethiddenproperty(rootPart, "PhysicsRepRootPart", nil)
+    end)
+end
+
+local function setupCarMemory()
+    task.spawn(function()
+        while task.wait(0.5) do
+            local ok, m = pcall(vehicleUtils.GetLocalVehicleModel)
+            if ok and m and m ~= "" and m ~= false then
+                local car = typeof(m) == "Instance" and m or Workspace:FindFirstChild(m, true)
+                if car and state.rememberedCar ~= car then
+                    state.rememberedCar = car
+                end
+            end
+        end
+    end)
+end
+
+local function getMyCar()
+    return state.rememberedCar
+end
+
+local function checkObstacles(startPos, endPos)
+    local direction = (endPos - startPos).Unit
+    local distance = (endPos - startPos).Magnitude
+    local ray = Ray.new(startPos, direction * distance)
+    local hit, hitPos = Workspace:FindPartOnRay(ray, character)
+    if hit and not hit:IsDescendantOf(character) and not (state.currentVehicle and hit:IsDescendantOf(state.currentVehicle)) then
+        return true
+    end
+    return false
+end
+
+local function isTargetCovered(root)
+    local ray = Ray.new(root.Position, (rootPart.Position - root.Position).Unit * 100)
+    local hit, _ = Workspace:FindPartOnRay(ray, character)
+    return hit ~= nil
+end
+
+local function isValidCriminal(root)
+    local plr = Players:GetPlayerFromCharacter(root.Parent)
+    if not plr or state.arrestedBlacklist[plr] then
+        return false
+    end
+    if plr.Team and plr.Team.Name ~= "Criminal" then
+        return false
+    end
+    local char = root.Parent
+    if char:GetAttribute("HasHandcuffs") then
+        return false
+    end
+    if root.Position.Y < Config.UndergroundYThreshold then
+        return false
+    end
+    if isTargetCovered(root) then
+        return false
+    end
+    return true
+end
+
+local function findNearestCriminal()
+    local nearest = nil
+    local nearestDist = math.huge
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= lp and plr.Character then
+            local root = plr.Character:FindFirstChild("HumanoidRootPart")
+            if root and isValidCriminal(root) then
+                if plr.Character:GetAttribute("InVehicle") then
+                    local targetCar = nil
+                    local minCarDist = math.huge
+                    for _, v in pairs(Workspace.Vehicles:GetChildren()) do
+                        if v:FindFirstChild("Seat") then
+                            local carDist = (v.Seat.Position - root.Position).Magnitude
+                            if carDist < minCarDist and carDist < 50 then
+                                minCarDist = carDist
+                                targetCar = v
+                            end
+                        end
+                    end
+                    if targetCar then
+                        local carName = targetCar.Name:lower()
+                        if carName:find("heli") or carName:find("ufo") or carName:find("blackhawk") or carName:find("drone") or carName:find("blimp") then
+                            continue
+                        end
+                    end
+                end
+                local dist = (root.Position - rootPart.Position).Magnitude
+                if dist < nearestDist then
+                    nearestDist = dist
+                    nearest = plr
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+local function attemptArrestDiscovery()
+    local attemptArrest = nil
+    for _, v in pairs(getgc(true)) do
+        if type(v) == "function" and islclosure(v) then
+            pcall(function()
+                if tostring(getinfo(v).name) == "AttemptArrest" then
+                    attemptArrest = v
+                end
+            end)
+            if attemptArrest then
+                break
+            end
+        end
+    end
+    return attemptArrest
+end
+
+local function equipHandcuffs()
+    for _, item in pairs(invSys.getInventoryItemsFor(lp)) do
+        if item.obj and item.obj.Name == "Handcuffs" then
+            pcall(function()
+                item:AttemptSetEquipped(true)
+            end)
+            return true
+        end
+    end
+    return false
+end
+
+local function localUnmount()
+    for i = 1, 5 do
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, nil)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, nil)
+        task.wait(0.1)
+        if not character:GetAttribute("InVehicle") then
+            return true
+        end
+    end
+    return false
+end
+
+local function phase1(cycleToken)
+    if state.cycleId ~= cycleToken then return false end
+    
+    state.phase = 1
+    state.phase1Complete = false
+    
+    local currentPos = rootPart.Position
+    local nearestStation = nil
+    local nearestDist = math.huge
+    
+    for stationName, stationData in pairs(PoliceData) do
+        local dist = (stationData.Base - currentPos).Magnitude
+        if dist < nearestDist then
+            nearestDist = dist
+            nearestStation = stationData
+        end
+    end
+    
+    if not nearestStation then return false end
+    
+    for _, waypoint in pairs(nearestStation.Path) do
+        if state.cycleId ~= cycleToken then return false end
+        rootPart.CFrame = CFrame.new(waypoint)
+        task.wait(Config.WaypointDelay)
+    end
+    
+    task.wait(Config.PostPathDelay)
+    state.phase1Complete = true
+    return true
+end
+
+local function phase2(cycleToken)
+    if state.cycleId ~= cycleToken or not state.phase1Complete then return false end
+    
+    state.phase = 2
+    
+    local attempts = 0
+    while attempts < 30 and state.cycleId == cycleToken do
+        local vehicles = Workspace.Vehicles:GetChildren()
+        local candidates = {}
+        
+        for _, v in pairs(vehicles) do
+            if v:FindFirstChild("Seat") then
+                local name = v.Name:lower()
+                if name:find("camaro") or name:find("jeep") then
+                    local dist = (v.Seat.Position - rootPart.Position).Magnitude
+                    if dist < Config.VehicleSearchDistance then
+                        table.insert(candidates, v)
+                    end
+                end
+            end
+        end
+        
+        if #candidates == 0 then
+            attempts = attempts + 1
+            task.wait(0.5)
+            continue
+        end
+        
+        for _, vehicle in pairs(candidates) do
+            if state.cycleId ~= cycleToken then return false end
+            
+            local seat = vehicle:FindFirstChild("Seat")
+            if not seat then continue end
+            
+            local specs = UI.CircleAction.Specs
+            local targetSpec = nil
+            for _, spec in pairs(specs) do
+                if spec.Part and spec.Part == seat then
+                    targetSpec = spec
+                    break
+                end
+            end
+            
+            if not targetSpec then
+                attempts = attempts + 1
+                task.wait(0.5)
+                continue
+            end
+            
+            pcall(function()
+                targetSpec:Callback(true)
+            end)
+            
+            task.wait(0.3)
+            
+            if character:GetAttribute("InVehicle") or humanoid.SeatPart then
+                local ok, model = pcall(vehicleUtils.GetLocalVehicleModel)
+                if ok and model then
+                    local resolvedCar = typeof(model) == "Instance" and model or Workspace:FindFirstChild(model, true)
+                    if resolvedCar then
+                        state.currentVehicle = resolvedCar
+                        return true
+                    end
+                end
+            end
+            
+            attempts = attempts + 1
+            task.wait(0.5)
+        end
+        
+        attempts = attempts + 1
+        task.wait(0.5)
+    end
+    
+    return false
+end
+
+local function phase3(cycleToken)
+    if state.cycleId ~= cycleToken or not state.currentVehicle then return false end
+    
+    state.phase = 3
+    
+    if not state.bodyVelocity then
+        state.bodyVelocity = Instance.new("BodyVelocity")
+        state.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        state.bodyVelocity.P = 10000
+        state.bodyVelocity.Parent = rootPart
+    end
+    
+    if not state.bodyGyro then
+        state.bodyGyro = Instance.new("BodyGyro")
+        state.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        state.bodyGyro.P = 10000
+        state.bodyGyro.Parent = rootPart
+    end
+    
+    local startY = rootPart.Position.Y
+    local targetY = startY + Config.TargetSearchHeight
+    
+    if checkObstacles(rootPart.Position, Vector3.new(rootPart.Position.X, targetY, rootPart.Position.Z)) then
+        humanoid.Health = 0
+        return false
+    end
+    
+    while state.cycleId == cycleToken and rootPart.Position.Y < targetY - 10 do
+        state.bodyVelocity.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+        state.bodyGyro.CFrame = rootPart.CFrame
+        task.wait(0.016)
+    end
+    
+    state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    return true
+end
+
+local function phase4And5(cycleToken)
+    if state.cycleId ~= cycleToken then return false end
+    
+    state.phase = 4
+    
+    state.targetPlayer = findNearestCriminal()
+    if not state.targetPlayer or not state.targetPlayer.Character then
+        return false
+    end
+    
+    state.targetCharacter = state.targetPlayer.Character
+    state.targetRoot = state.targetCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not state.targetRoot then
+        return false
+    end
+    
+    if state.targetCharacter:GetAttribute("InVehicle") then
+        local targetCar = nil
+        local minCarDist = math.huge
+        for _, v in pairs(Workspace.Vehicles:GetChildren()) do
+            if v:FindFirstChild("Seat") then
+                local carDist = (v.Seat.Position - state.targetRoot.Position).Magnitude
+                if carDist < minCarDist and carDist < 50 then
+                    minCarDist = carDist
+                    targetCar = v
+                end
+            end
+        end
+        state.targetVehicle = targetCar
+    end
+    
+    state.phase = 5
+    
+    local targetHeight = Config.TargetSearchHeight
+    local targetX = state.targetRoot.Position.X
+    local targetZ = state.targetRoot.Position.Z
+    
+    while state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+        if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+            return false
+        end
+        
+        state.targetRoot = state.targetCharacter:FindFirstChild("HumanoidRootPart")
+        if not state.targetRoot then
+            return false
+        end
+        
+        targetX = state.targetRoot.Position.X
+        targetZ = state.targetRoot.Position.Z
+        
+        local targetPos = Vector3.new(targetX, targetHeight, targetZ)
+        local diff = targetPos - rootPart.Position
+        
+        if diff.Magnitude < 15 then
+            break
+        end
+        
+        state.bodyVelocity.Velocity = diff.Unit * Config.TargetApproachSpeed
+        state.bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + state.bodyVelocity.Velocity)
+        task.wait(0.016)
+    end
+    
+    if state.cycleId ~= cycleToken or not state.targetPlayer or not state.targetCharacter then
+        return false
+    end
+    
+    local descending = true
+    while descending and state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+        if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+            return false
+        end
+        
+        state.targetRoot = state.targetCharacter:FindFirstChild("HumanoidRootPart")
+        if not state.targetRoot then
+            return false
+        end
+        
+        local currentPos = rootPart.Position
+        local targetPos = state.targetRoot.Position
+        local verticalDist = currentPos.Y - targetPos.Y
+        
+        if state.targetCharacter:GetAttribute("InVehicle") then
+            if verticalDist < Config.TargetEngageDistance then
+                descending = false
+                break
+            end
+        else
+            if verticalDist < 6 then
+                descending = false
+                break
+            end
+        end
+        
+        local horizDiff = Vector3.new(targetPos.X - currentPos.X, 0, targetPos.Z - currentPos.Z)
+        local moveDir = horizDiff.Magnitude > 0 and horizDiff.Unit or Vector3.new(0, 0, 0)
+        
+        state.bodyVelocity.Velocity = moveDir * Config.TargetApproachSpeed + Vector3.new(0, -Config.DescendSpeed, 0)
+        state.bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + state.bodyVelocity.Velocity)
+        task.wait(0.016)
+    end
+    
+    return true
+end
+
+local function tirePopPhase(cycleToken)
+    if state.cycleId ~= cycleToken or not state.targetVehicle or not state.targetPlayer then
+        return false
+    end
+    
+    local initialPop = state.targetVehicle:GetAttribute("VehicleTiresLastPop")
+    
+    while state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+        if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+            return false
+        end
+        
+        if not state.targetCharacter:GetAttribute("InVehicle") then
+            return true
+        end
+        
+        if not state.targetVehicle.Parent then
+            return false
+        end
+        
+        state.targetRoot = state.targetCharacter:FindFirstChild("HumanoidRootPart")
+        if not state.targetRoot then
+            return false
+        end
+        
+        pcall(function()
+            sethiddenproperty(rootPart, "PhysicsRepRootPart", state.targetRoot)
+        end)
+        rootPart.CFrame = state.targetRoot.CFrame * Config.TargetTpOffset
+        
+        state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        
+        if state.targetVehicle:GetAttribute("VehicleTiresLastPop") ~= initialPop then
+            return true
+        end
+        
+        task.wait(Config.TirePopCheckDelay)
+    end
+    
+    return false
+end
+
+local function targetApproachPhase(cycleToken)
+    if state.cycleId ~= cycleToken or not state.targetPlayer or not state.targetCharacter then
+        return false
+    end
+    
+    state.lastExitedVehicle = state.currentVehicle
+    
+    localUnmount()
+    task.wait(0.2)
+    
+    equipHandcuffs()
+    task.wait(0.1)
+    
+    local attemptArrest = attemptArrestDiscovery()
+    
+    local ejectLoop = task.spawn(function()
+        while state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+            if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+                break
+            end
+            
+            if not state.targetCharacter:GetAttribute("InVehicle") then
+                break
+            end
+            
+            state.targetRoot = state.targetCharacter:FindFirstChild("HumanoidRootPart")
+            if not state.targetRoot then
+                break
+            end
+            
+            if state.targetVehicle and state.targetVehicle.Parent then
+                if state.targetVehicle:FindFirstChild("Seat") then
+                    local seat = state.targetVehicle.Seat
+                    for _, spec in pairs(UI.CircleAction.Specs) do
+                        if spec.Part and spec.Part == seat then
+                            pcall(function()
+                                spec:Callback(true)
+                            end)
+                            break
+                        end
+                    end
+                end
+            end
+            
+            task.wait(0.1)
+        end
+    end)
+    
+    local tpLocked = false
+    local arrestLoop = task.spawn(function()
+        local arrestStartTime = tick()
+        while state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+            if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+                break
+            end
+            
+            if state.targetCharacter:GetAttribute("HasHandcuffs") then
+                break
+            end
+            
+            if tick() - arrestStartTime > Config.ArrestTimeout then
+                break
+            end
+            
+            if attemptArrest then
+                pcall(function()
+                    attemptArrest(state.targetPlayer)
+                end)
+            end
+            
+            task.wait(0.1)
+        end
+    end)
+    
+    local flightLoop = task.spawn(function()
+        while state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+            if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+                break
+            end
+            
+            if state.targetCharacter:GetAttribute("HasHandcuffs") then
+                break
+            end
+            
+            state.targetRoot = state.targetCharacter:FindFirstChild("HumanoidRootPart")
+            if not state.targetRoot then
+                break
+            end
+            
+            local dist = (state.targetRoot.Position - rootPart.Position).Magnitude
+            
+            if dist <= Config.TargetLockDistance then
+                if not tpLocked then
+                    tpLocked = true
+                end
+                pcall(function()
+                    sethiddenproperty(rootPart, "PhysicsRepRootPart", state.targetRoot)
+                end)
+                rootPart.CFrame = state.targetRoot.CFrame * Config.TargetTpOffset
+            else
+                if tpLocked then
+                    tpLocked = false
+                    pcall(function()
+                        sethiddenproperty(rootPart, "PhysicsRepRootPart", nil)
+                    end)
+                end
+                local diff = state.targetRoot.Position - rootPart.Position
+                state.bodyVelocity.Velocity = diff.Unit * Config.TargetApproachSpeed
+                state.bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + state.bodyVelocity.Velocity)
+            end
+            
+            task.wait(0.016)
+        end
+    end)
+    
+    while state.cycleId == cycleToken and state.targetPlayer and state.targetCharacter do
+        if not state.targetCharacter.Parent or not state.targetRoot.Parent then
+            break
+        end
+        
+        if state.targetCharacter:GetAttribute("HasHandcuffs") then
+            break
+        end
+        
+        task.wait(0.1)
+    end
+    
+    pcall(function()
+        task.cancel(ejectLoop)
+        task.cancel(arrestLoop)
+        task.cancel(flightLoop)
+    end)
+    
+    if state.cycleId ~= cycleToken or not state.targetCharacter then
+        return false
+    end
+    
+    if state.targetCharacter:GetAttribute("HasHandcuffs") then
+        print("[HANDCUFFED]", state.targetPlayer.Name)
+        state.arrestedBlacklist[state.targetPlayer] = true
+        pcall(function()
+            sethiddenproperty(rootPart, "PhysicsRepRootPart", nil)
+        end)
+        return true
+    end
+    
+    return false
+end
+
+local function returnToVehiclePhase(cycleToken)
+    if state.cycleId ~= cycleToken then return false end
+    
+    state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    task.wait(0.2)
+    
+    local returnHeight = rootPart.Position.Y + Config.ReturnHeight
+    while state.cycleId == cycleToken and rootPart.Position.Y < returnHeight - 5 do
+        state.bodyVelocity.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+        state.bodyGyro.CFrame = rootPart.CFrame
+        task.wait(0.016)
+    end
+    
+    state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    
+    if state.lastExitedVehicle and state.lastExitedVehicle.Parent then
+        local dist = (state.lastExitedVehicle.Seat.Position - rootPart.Position).Magnitude
+        
+        if dist < Config.FallbackDistance then
+            local targetPos = Vector3.new(state.lastExitedVehicle.Seat.Position.X, rootPart.Position.Y, state.lastExitedVehicle.Seat.Position.Z)
+            
+            while state.cycleId == cycleToken and (targetPos - rootPart.Position).Magnitude > 5 do
+                local diff = targetPos - rootPart.Position
+                state.bodyVelocity.Velocity = diff.Unit * Config.TargetApproachSpeed
+                state.bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, targetPos)
+                task.wait(0.016)
+            end
+            
+            state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            task.wait(0.2)
+            
+            local seat = state.lastExitedVehicle:FindFirstChild("Seat")
+            if seat then
+                for _, spec in pairs(UI.CircleAction.Specs) do
+                    if spec.Part and spec.Part == seat then
+                        pcall(function()
+                            spec:Callback(true)
+                        end)
+                        break
+                    end
+                end
+            end
+            
+            task.wait(0.3)
+            
+            if character:GetAttribute("InVehicle") or humanoid.SeatPart then
+                local ok, model = pcall(vehicleUtils.GetLocalVehicleModel)
+                if ok and model then
+                    state.currentVehicle = typeof(model) == "Instance" and model or Workspace:FindFirstChild(model, true)
+                    return true
+                end
+            end
+        end
+    end
+    
+    local targetY = rootPart.Position.Y + 100
+    while state.cycleId == cycleToken and rootPart.Position.Y < targetY do
+        state.bodyVelocity.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+        task.wait(0.016)
+    end
+    
+    local vehicles = Workspace.Vehicles:GetChildren()
+    for _, v in pairs(vehicles) do
+        if v:FindFirstChild("Seat") then
+            local name = v.Name:lower()
+            if (name:find("camaro") or name:find("jeep")) and v.Parent then
+                local seat = v.Seat
+                for _, spec in pairs(UI.CircleAction.Specs) do
+                    if spec.Part and spec.Part == seat then
+                        pcall(function()
+                            spec:Callback(true)
+                        end)
+                        break
+                    end
+                end
+                
+                task.wait(0.3)
+                
+                if character:GetAttribute("InVehicle") or humanoid.SeatPart then
+                    local ok, model = pcall(vehicleUtils.GetLocalVehicleModel)
+                    if ok and model then
+                        state.currentVehicle = typeof(model) == "Instance" and model or Workspace:FindFirstChild(model, true)
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    
+    local currentCriminalPos = nil
+    for _, plr in pairs(Players:GetPlayers()) do
+        if state.arrestedBlacklist[plr] and plr.Character then
+            local root = plr.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                currentCriminalPos = root.Position
+                break
+            end
+        end
+    end
+    
+    if currentCriminalPos then
+        local away = rootPart.Position + (rootPart.Position - currentCriminalPos).Unit * Config.FallbackAwayDistance
+        while state.cycleId == cycleToken and (away - rootPart.Position).Magnitude > 20 do
+            local diff = away - rootPart.Position
+            state.bodyVelocity.Velocity = diff.Unit * Config.TargetApproachSpeed
+            task.wait(0.016)
+        end
+    end
+    
+    local groundLevel = rootPart.Position.Y - 100
+    while state.cycleId == cycleToken and rootPart.Position.Y > groundLevel do
+        state.bodyVelocity.Velocity = Vector3.new(0, -Config.DescendSpeed, 0)
+        task.wait(0.016)
+    end
+    
+    state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    
+    local spawnRemote = ReplicatedStorage:FindFirstChild("GarageSpawnVehicle", true)
+    if spawnRemote then
+        spawnRemote:FireServer("Chassis", "Camaro")
+        
+        local spawnWait = 0
+        while spawnWait < 30 and state.cycleId == cycleToken do
+            local ok, m = pcall(vehicleUtils.GetLocalVehicleModel)
+            if ok and m and m ~= "" and m ~= false then
+                local car = typeof(m) == "Instance" and m or Workspace:FindFirstChild(m, true)
+                if car then
+                    task.wait(0.5)
+                    for _, v in pairs(Workspace.Vehicles:GetChildren()) do
+                        if v:FindFirstChild("Seat") then
+                            local name = v.Name:lower()
+                            if (name:find("camaro") or name:find("jeep")) and v.Parent then
+                                local seat = v.Seat
+                                for _, spec in pairs(UI.CircleAction.Specs) do
+                                    if spec.Part and spec.Part == seat then
+                                        pcall(function()
+                                            spec:Callback(true)
+                                        end)
+                                        break
+                                    end
+                                end
+                                
+                                task.wait(0.3)
+                                
+                                if character:GetAttribute("InVehicle") or humanoid.SeatPart then
+                                    state.currentVehicle = v
+                                    return true
+                                end
+                            end
+                        end
+                    end
+                    break
+                end
+            end
+            task.wait(0.5)
+            spawnWait = spawnWait + 1
+        end
+    end
+    
+    return false
+end
+
+local function runCycle(cycleToken)
+    if not phase1(cycleToken) then return end
+    if not phase2(cycleToken) then return end
+    if not phase3(cycleToken) then return end
+    
+    while state.cycleId == cycleToken do
+        if not phase4And5(cycleToken) then break end
+        if not state.targetCharacter or not state.targetCharacter:GetAttribute("InVehicle") then
+            if not targetApproachPhase(cycleToken) then break end
+        else
+            if not tirePopPhase(cycleToken) then break end
+            if not targetApproachPhase(cycleToken) then break end
+        end
+        if not returnToVehiclePhase(cycleToken) then break end
+        
+        if not state.bodyVelocity or not state.bodyVelocity.Parent then
+            if not state.bodyVelocity then
+                state.bodyVelocity = Instance.new("BodyVelocity")
+                state.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                state.bodyVelocity.P = 10000
+                state.bodyVelocity.Parent = rootPart
+            end
+        end
+        
+        if not state.bodyGyro or not state.bodyGyro.Parent then
+            if not state.bodyGyro then
+                state.bodyGyro = Instance.new("BodyGyro")
+                state.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                state.bodyGyro.P = 10000
+                state.bodyGyro.Parent = rootPart
+            end
+        end
+        
+        local targetHeight = Config.TargetSearchHeight
+        while state.cycleId == cycleToken and rootPart.Position.Y < targetHeight - 10 do
+            state.bodyVelocity.Velocity = Vector3.new(0, Config.AscendSpeed, 0)
+            state.bodyGyro.CFrame = rootPart.CFrame
+            task.wait(0.016)
+        end
+        
+        state.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        state.targetPlayer = nil
+        state.targetCharacter = nil
+        state.targetRoot = nil
+        state.targetVehicle = nil
+    end
+end
+
+local function onCharacterAdded(newCharacter)
+    character = newCharacter
+    humanoid = character:WaitForChild("Humanoid")
+    rootPart = character:WaitForChild("HumanoidRootPart")
+    
+    cleanup()
+    state.phase = 0
+    state.phase1Complete = false
+    state.cycleId = state.cycleId + 1
+    local cycleToken = state.cycleId
+    
+    task.wait(0.5)
+    
+    runCycle(cycleToken)
+end
+
+lp.CharacterAdded:Connect(onCharacterAdded)
+humanoid.Died:Connect(function()
+    cleanup()
+    state.cycleId = state.cycleId + 1
+end)
+
+setupCarMemory()
+
+if character then
+    onCharacterAdded(character)
+end
